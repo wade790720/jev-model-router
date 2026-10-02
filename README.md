@@ -1,6 +1,6 @@
-# JEV Model Router
+# Smart ChatGPT
 
-在 ChatGPT 網頁輸入草稿時，用 [TypeSafe AI Jev](https://docs.typesafe.ai/introduction) 判斷適合的模型／推理強度，並嘗試在送出前切換。這是獨立開發的 Chrome／Edge Manifest V3 擴充功能，並非 OpenAI 或 TypeSafe AI 官方產品。
+在 ChatGPT 網頁輸入草稿時，用 [TypeSafe AI Jev](https://docs.typesafe.ai/introduction) 判斷適合的模型／推理強度，並嘗試在送出前切換。繁體中文介面的產品名稱是「ChatGPT 智慧選模型」。這是獨立開發的 Chrome／Edge Manifest V3 擴充功能，並非 OpenAI 或 TypeSafe AI 官方產品。
 
 **目前狀態：** v0.2.7 原型。支援 `chatgpt.com` 的「對話」與「工作」文字輸入框；不讀取聊天歷史、附件或圖片，也不控制原生桌面 App。模型切換依賴 ChatGPT 網頁 DOM，網頁改版後需要重新驗證。
 

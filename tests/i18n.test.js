@@ -24,3 +24,28 @@ test("localizes English, Japanese, Korean and falls back to English", () => {
   assert.equal(i18n("ko-KR").t("settings"), "설정");
   assert.equal(i18n("fr-FR").locale, "en");
 });
+
+test("product branding follows the browser language in the popup and manifest", () => {
+  const manifest = JSON.parse(readFileSync(new URL("../extension/manifest.json", import.meta.url), "utf8"));
+  assert.equal(manifest.name, "__MSG_productName__");
+  assert.equal(manifest.description, "__MSG_productDescription__");
+  assert.equal(manifest.action.default_title, "__MSG_productName__");
+  assert.equal(manifest.default_locale, "en");
+  for (const [language, folder, expected] of [
+    ["en-US", "en", "Smart ChatGPT"],
+    ["zh-TW", "zh_TW", "ChatGPT 智慧選模型"],
+    ["zh-CN", "zh_CN", "ChatGPT 智能选模型"],
+    ["ja-JP", "ja", "Smart ChatGPT"],
+    ["ko-KR", "ko", "Smart ChatGPT"]
+  ]) {
+    const messages = JSON.parse(readFileSync(new URL(`../extension/_locales/${folder}/messages.json`, import.meta.url), "utf8"));
+    assert.equal(i18n(language).t("productName"), expected);
+    assert.equal(messages.productName.message, expected);
+    assert.ok(messages.productDescription.message.length > 0);
+    assert.ok(messages.productDescription.message.length <= 132);
+  }
+  const traditional = JSON.parse(readFileSync(new URL("../extension/_locales/zh_TW/messages.json", import.meta.url), "utf8"));
+  const simplified = JSON.parse(readFileSync(new URL("../extension/_locales/zh_CN/messages.json", import.meta.url), "utf8"));
+  assert.equal(traditional.productDescription.message, "根據輸入內容，推薦適合的 ChatGPT 模型並自動切換；簡單任務選高效率模型，複雜任務選高階模型，由 TypeSafe AI Jev 提供判斷機制");
+  assert.equal(simplified.productDescription.message, "根据输入内容，推荐合适的 ChatGPT 模型并自动切换；简单任务选高效率模型，复杂任务选高阶模型，由 TypeSafe AI Jev 提供判断机制");
+});

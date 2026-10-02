@@ -1,0 +1,4 @@
+{
+  "productName": { "message": "ChatGPT 智慧選模型" },
+  "productDescription": { "message": "根據輸入內容，推薦適合的 ChatGPT 模型並自動切換；簡單任務選高效率模型，複雜任務選高階模型，由 TypeSafe AI Jev 提供判斷機制" }
+}

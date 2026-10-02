@@ -180,7 +180,7 @@ async function activate(request, env) {
       "INSERT INTO licenses (subscription_id, token_hash, status, updated_at) VALUES (?, ?, 'active', ?) " +
       "ON CONFLICT(subscription_id) DO UPDATE SET token_hash = excluded.token_hash, status = 'active', updated_at = excluded.updated_at"
     ).bind(subscription.id, tokenHash, Math.floor(Date.now() / 1000)).run();
-    return html(`<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><title>JEV 訂閱啟用</title><style>body{font:16px system-ui;max-width:680px;margin:48px auto;padding:16px}code{display:block;overflow-wrap:anywhere;padding:16px;background:#eee}</style><h1>訂閱已啟用</h1><p>把下方啟用碼貼進 JEV Model Router 設定頁。重新開啟此頁會產生新碼，舊碼將失效。</p><code>${token}</code></html>`);
+    return html(`<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><title>ChatGPT 智慧選模型｜訂閱啟用</title><style>body{font:16px system-ui;max-width:680px;margin:48px auto;padding:16px}code{display:block;overflow-wrap:anywhere;padding:16px;background:#eee}</style><h1>訂閱已啟用</h1><p>把下方啟用碼貼進「ChatGPT 智慧選模型」設定頁。重新開啟此頁會產生新碼，舊碼將失效。</p><code>${token}</code></html>`);
   } catch (error) {
     return html("Activation failed. Please contact support.", 502);
   }
