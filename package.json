@@ -1,0 +1,9 @@
+{
+  "name": "jev-model-router",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check extension/background.js && node --check extension/content.js && node --check extension/i18n.js && node --check extension/options.js && node --check extension/route.js && node --check worker/src/index.js && node --check worker/src/stripe.js"
+  }
+}
