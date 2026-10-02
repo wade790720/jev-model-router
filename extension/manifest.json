@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "JEV Model Router",
+  "version": "0.2.5",
+  "description": "Recommend and select ChatGPT Chat or Work models from a text draft using TypeSafe AI Jev.",
+  "permissions": ["storage"],
+  "host_permissions": ["https://chatgpt.com/*", "https://api.typesafe.ai/*"],
+  "optional_host_permissions": ["https://*/*", "http://localhost/*", "http://127.0.0.1/*"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://chatgpt.com/*"],
+      "js": ["i18n.js", "content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "options_page": "options.html",
+  "action": {
+    "default_title": "JEV Model Router",
+    "default_popup": "options.html"
+  }
+}

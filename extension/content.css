@@ -1,0 +1,92 @@
+/* shadcn/ui Base Alert composition, adapted to this dependency-free content script. */
+#jev-model-router-badge {
+  --jev-surface: var(--color-surface-elevated-secondary, light-dark(#fff, #303030));
+  --jev-text: var(--color-text-primary, light-dark(#18181b, #ededed));
+  --jev-muted: var(--color-text-secondary, light-dark(#52525b, #cdcdcd));
+  --jev-border: var(--color-border, light-dark(#e4e4e7, #ffffff26));
+  position: fixed;
+  z-index: 2147483646;
+  box-sizing: border-box;
+  width: min(200px, calc(100vw - 16px));
+  padding: 9px 11px;
+  border: 1px solid var(--jev-border);
+  border-radius: 9px;
+  background: var(--jev-surface);
+  color: var(--jev-text);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .16);
+  font: 12px/1.3 system-ui, sans-serif;
+  text-align: left;
+}
+#jev-model-router-badge[hidden] { display: none !important; }
+#jev-model-router-badge .jev-alert-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+#jev-model-router-badge .jev-alert-status {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+#jev-model-router-badge .jev-status-light {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #a1a1aa;
+  box-shadow: 0 0 0 3px rgba(161, 161, 170, .16);
+}
+#jev-model-router-badge[data-kind="success"] .jev-status-light {
+  background: #16a34a;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, .16);
+}
+#jev-model-router-badge[data-kind="warning"] .jev-status-light,
+#jev-model-router-badge[data-kind="manual"] .jev-status-light {
+  background: #d97706;
+  box-shadow: 0 0 0 3px rgba(217, 119, 6, .16);
+}
+#jev-model-router-badge[data-kind="error"] .jev-status-light {
+  background: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, .16);
+}
+#jev-model-router-badge[data-kind="warning"],
+#jev-model-router-badge[data-kind="manual"] {
+  border-color: color-mix(in srgb, var(--jev-border) 45%, #d97706 55%);
+}
+#jev-model-router-badge[data-kind="error"] {
+  border-color: color-mix(in srgb, var(--jev-border) 45%, #dc2626 55%);
+}
+#jev-model-router-badge .jev-alert-action {
+  margin-left: auto;
+  border: 0;
+  padding: 2px 3px;
+  background: transparent;
+  color: var(--jev-muted);
+  font: inherit;
+  font-weight: 400;
+  cursor: pointer;
+}
+#jev-model-router-badge .jev-alert-action:hover { color: var(--jev-text); text-decoration: underline; }
+#jev-model-router-badge .jev-probabilities {
+  display: grid;
+  gap: 1px;
+  margin-top: 5px;
+}
+#jev-model-router-badge .jev-probability {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+#jev-model-router-badge .jev-probability span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#jev-model-router-badge .jev-probability strong { font-weight: 600; }
