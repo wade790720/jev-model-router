@@ -6,7 +6,7 @@ import { runInNewContext } from "node:vm";
 const source = readFileSync(new URL("../extension/content.js", import.meta.url), "utf8");
 const cssSource = readFileSync(new URL("../extension/content.css", import.meta.url), "utf8");
 const i18nSource = readFileSync(new URL("../extension/i18n.js", import.meta.url), "utf8");
-const instrumented = source.replace(/\n\}\)\(\);\s*$/, "\n  globalThis.__jevTest = { selectedLabelMatches, selectReasoningSlider, workModelMatches, workSelectionMatches, workSelectionLabel, selectWorkModel, routeDraft, onDraftChange, show, inWorkMode, WORK_TARGETS, state };\n})();");
+const instrumented = source.replace(/\n\}\)\(\);\s*$/, "\n  globalThis.__jevTest = { selectedLabelMatches, selectReasoningSlider, selectModel, workModelMatches, workSelectionMatches, workSelectionLabel, selectWorkModel, routeDraft, onDraftChange, show, inWorkMode, WORK_TARGETS, state };\n})();");
 assert.notEqual(instrumented, source, "content script test hook must be inserted");
 
 function loadContent(context, language = "zh-TW") {
@@ -72,6 +72,61 @@ test("a slider change is successful when ChatGPT closes the menu immediately", a
   assert.equal(await api.selectReasoningSlider("instant"), "Instant");
   assert.equal(api.selectedLabelMatches(button, ["Instant"]), true);
 });
+
+for (const userNavigatesAway of [false, true]) {
+  test(`automatic switch ${userNavigatesAway ? "respects user navigation" : "restores draft focus and caret"}`, async () => {
+    const handlers = {};
+    let menuOpen = false;
+    let model = "Medium";
+    class Textarea {
+      value = "A draft for routing";
+      isConnected = true;
+      selectionStart = 7;
+      selectionEnd = 7;
+      selectionDirection = "none";
+      contains() { return false; }
+      focus(options) { assert.equal(options.preventScroll, true); document.activeElement = this; }
+      setSelectionRange(start, end, direction) { this.selectionStart = start; this.selectionEnd = end; this.selectionDirection = direction; }
+    }
+    const editor = new Textarea();
+    const visible = () => ({ width: 100, height: 30 });
+    const button = {
+      get innerText() { return model; },
+      getAttribute(name) { return name === "aria-expanded" ? String(menuOpen) : null; },
+      getBoundingClientRect: visible,
+      click() { menuOpen = !menuOpen; document.activeElement = this; }
+    };
+    const item = {
+      innerText: "Instant", getAttribute: () => null, getBoundingClientRect: visible,
+      closest: () => null,
+      click() {
+        document.activeElement = this;
+        if (userNavigatesAway) handlers.pointerdown({ isTrusted: true, target: this });
+        model = "Instant";
+        menuOpen = false;
+      }
+    };
+    const document = {
+      activeElement: editor,
+      addEventListener(type, handler) { handlers[type] = handler; },
+      querySelectorAll(selector) {
+        if (selector === '[data-composer-navigation-target="reasoning"]') return [button];
+        if (selector.startsWith("[role='menuitem']")) return menuOpen ? [item] : [];
+        return [];
+      }
+    };
+    const context = { document, HTMLTextAreaElement: Textarea,
+      getComputedStyle: () => ({ visibility: "visible" }),
+      setInterval() {}, setTimeout(callback) { callback(); }, clearTimeout() {} };
+    loadContent(context);
+    const { state, selectModel } = context.__jevTest;
+    state.composer = editor;
+    state.text = editor.value;
+    assert.equal(await selectModel("instant", state.text, state.version), "Instant");
+    assert.equal(document.activeElement, userNavigatesAway ? item : editor);
+    assert.equal(editor.selectionStart, 7);
+  });
+}
 
 test("Work success requires both the model and the requested reasoning effort", () => {
   const { api } = fixture();

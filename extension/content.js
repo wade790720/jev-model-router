@@ -39,6 +39,7 @@
     partialText: "",
     manualOverride: false,
     switching: false,
+    focusIntentVersion: 0,
     composing: false,
     compositionEndAt: 0,
     sendQueued: false,
@@ -195,6 +196,45 @@
 
   function inDraft(text, version, surface = state.surface) {
     return !state.manualOverride && text === state.text && version === state.version && surface === state.surface;
+  }
+
+  function captureComposerFocus(text, version) {
+    const composer = state.composer;
+    if (!composer || (document.activeElement !== composer && !composer.contains?.(document.activeElement))) return null;
+    const snapshot = { composer, text, version, focusIntentVersion: state.focusIntentVersion };
+    if (composer instanceof HTMLTextAreaElement) {
+      snapshot.selectionStart = composer.selectionStart;
+      snapshot.selectionEnd = composer.selectionEnd;
+      snapshot.selectionDirection = composer.selectionDirection;
+    } else {
+      const selection = document.getSelection?.();
+      if (selection?.rangeCount) {
+        const range = selection.getRangeAt(0);
+        if (composer.contains?.(range.startContainer) && composer.contains?.(range.endContainer)) {
+          snapshot.range = range.cloneRange();
+        }
+      }
+    }
+    return snapshot;
+  }
+
+  function restoreComposerFocus(snapshot) {
+    if (!snapshot || state.sendQueued || state.composing || state.manualOverride ||
+        state.focusIntentVersion !== snapshot.focusIntentVersion ||
+        state.composer !== snapshot.composer || !snapshot.composer.isConnected ||
+        state.version !== snapshot.version || state.text !== snapshot.text ||
+        readText(snapshot.composer) !== snapshot.text ||
+        document.activeElement === snapshot.composer || snapshot.composer.contains?.(document.activeElement)) return;
+    snapshot.composer.focus({ preventScroll: true });
+    if (snapshot.selectionStart !== undefined) {
+      snapshot.composer.setSelectionRange(snapshot.selectionStart, snapshot.selectionEnd, snapshot.selectionDirection);
+    } else if (snapshot.range?.startContainer.isConnected && snapshot.range.endContainer.isConnected &&
+               snapshot.composer.contains?.(snapshot.range.startContainer) &&
+               snapshot.composer.contains?.(snapshot.range.endContainer)) {
+      const selection = document.getSelection?.();
+      selection?.removeAllRanges();
+      selection?.addRange(snapshot.range);
+    }
   }
 
   async function routeDraft(text, version = state.version) {
@@ -376,6 +416,7 @@
     if (!button) return null;
     const labels = TARGET_LABELS[mode];
     if (selectedLabelMatches(button, [labels[0]])) return labels[0];
+    const focusSnapshot = captureComposerFocus(text, version);
     state.switching = true;
     try {
       openModelMenu();
@@ -405,6 +446,7 @@
       return null;
     } finally {
       state.switching = false;
+      restoreComposerFocus(focusSnapshot);
     }
   }
 
@@ -470,6 +512,7 @@
     let trigger = findModelButton();
     if (!trigger) return null;
     if (workSelectionMatches(trigger, target)) return workSelectionLabel(trigger, target);
+    const focusSnapshot = captureComposerFocus(text, version);
     state.switching = true;
     try {
       if (!openModelMenu() || !await ensureWorkModelList()) return null;
@@ -536,6 +579,7 @@
       const current = findModelButton();
       if (current?.getAttribute("aria-expanded") === "true") current.click();
       state.switching = false;
+      restoreComposerFocus(focusSnapshot);
     }
   }
 
@@ -653,7 +697,11 @@
   }, true);
 
   document.addEventListener("pointerdown", event => {
-    if (!event.isTrusted || !state.text) return;
+    if (!event.isTrusted) return;
+    if (state.composer && event.target !== state.composer && !state.composer.contains?.(event.target)) {
+      state.focusIntentVersion++;
+    }
+    if (!state.text) return;
     if (isManualModelChoice(event.target)) {
       state.manualOverride = true;
       clearTimeout(state.timer);
@@ -662,6 +710,7 @@
   }, true);
 
   document.addEventListener("keydown", event => {
+    if (event.isTrusted && event.key === "Tab") state.focusIntentVersion++;
     if (event.isTrusted && ["ArrowLeft", "ArrowRight"].includes(event.key) && state.text && isManualModelChoice(event.target)) {
       state.manualOverride = true;
       clearTimeout(state.timer);
