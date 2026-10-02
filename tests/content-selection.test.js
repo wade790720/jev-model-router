@@ -6,7 +6,7 @@ import { runInNewContext } from "node:vm";
 const source = readFileSync(new URL("../extension/content.js", import.meta.url), "utf8");
 const cssSource = readFileSync(new URL("../extension/content.css", import.meta.url), "utf8");
 const i18nSource = readFileSync(new URL("../extension/i18n.js", import.meta.url), "utf8");
-const instrumented = source.replace(/\n\}\)\(\);\s*$/, "\n  globalThis.__jevTest = { selectedLabelMatches, selectReasoningSlider, selectModel, workModelMatches, workSelectionMatches, workSelectionLabel, selectWorkModel, routeDraft, onDraftChange, show, inWorkMode, WORK_TARGETS, state };\n})();");
+const instrumented = source.replace(/\n\}\)\(\);\s*$/, "\n  globalThis.__jevTest = { selectedLabelMatches, selectReasoningSlider, selectModel, workModelMatches, workSelectionMatches, workSelectionLabel, selectWorkModel, routeDraft, onDraftChange, readText, show, inWorkMode, WORK_TARGETS, state };\n})();");
 assert.notEqual(instrumented, source, "content script test hook must be inserted");
 
 function loadContent(context, language = "zh-TW") {
@@ -324,6 +324,48 @@ test("Work reports a partial switch when the model changed but effort did not", 
   assert.equal(state.partialText, state.text);
   assert.equal(state.badge.dataset.kind, "warning");
   assert.equal(state.badge.children[0].children[1].textContent, "JEV · 模型已切換，強度請手動調整");
+});
+
+test("low-confidence recommendations leave the selected model untouched", async () => {
+  let clicked = false;
+  const trigger = {
+    innerText: "GPT-6 Luna", getBoundingClientRect: () => ({ width: 100, height: 30 }),
+    getAttribute: () => null, click() { clicked = true; }
+  };
+  const element = () => ({ children: [], style: {}, dataset: {}, isConnected: false, offsetHeight: 70,
+    setAttribute() {}, addEventListener() {},
+    append(...children) { this.children.push(...children); }, replaceChildren() { this.children = []; } });
+  const context = {
+    document: { addEventListener() {}, createElement: element,
+      body: { appendChild(node) { node.isConnected = true; } },
+      querySelectorAll(selector) { return selector === '[data-composer-navigation-target="reasoning"]' ? [trigger] : []; } },
+    window: { innerWidth: 500 }, getComputedStyle: () => ({ visibility: "visible" }),
+    setInterval() {}, setTimeout(callback) { callback(); }, clearTimeout() {},
+    chrome: { runtime: { sendMessage(_message, callback) {
+      callback({ ok: true, result: { mode: "astra_xhigh", lowConfidence: true,
+        topChoices: [{ mode: "astra_xhigh", probability: 0.4 }] } });
+    } } }
+  };
+  loadContent(context);
+  const { state, routeDraft } = context.__jevTest;
+  state.composer = { closest: () => ({ getBoundingClientRect: () => ({ top: 200, right: 450 }) }) };
+  state.text = "請設計並驗證系統";
+  state.surface = "work";
+  assert.equal(await routeDraft(state.text, state.version), true);
+  assert.equal(clicked, false);
+  assert.equal(state.appliedText, state.text);
+  assert.equal(state.badge.dataset.kind, "warning");
+  assert.match(state.badge.children[0].children[1].textContent, /建議 GPT-6 Astra/);
+});
+
+test("draft text keeps code indentation and line breaks for Jev", () => {
+  class Textarea {}
+  const context = { document: { addEventListener() {} }, HTMLTextAreaElement: Textarea,
+    setInterval() {}, setTimeout() {}, clearTimeout() {} };
+  loadContent(context);
+  const editor = new Textarea();
+  editor.value = "  Fix this:\n    if (x) {\n      return y;\n    }  ";
+  assert.equal(context.__jevTest.readText(editor), "Fix this:\n    if (x) {\n      return y;\n    }");
 });
 
 test("Alert is right-aligned and renders only the returned top choices", () => {

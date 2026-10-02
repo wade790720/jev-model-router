@@ -5,7 +5,7 @@
     en: {
       settings: "Settings", settingsAria: "Open JEV Model Router settings", probabilities: "Top JEV probabilities",
       analyzing: "Analyzing…", switching: "Switching…", switched: "Switched",
-      switchedFallback: "Switched to fallback", switchedLowConfidence: "Switched (low confidence)",
+      switchedFallback: "Switched to fallback", lowConfidenceRecommendation: "Suggested: {model}; please confirm",
       switchedNoProbabilities: "Switched (no probabilities)", switchFailed: "Switch failed; choose manually", effortSwitchFailed: "Model switched; set effort manually",
       routeFailed: "Routing failed; choose a model manually", manual: "Keeping your manual selection",
       sendFailed: "Switch failed; adjust the model before sending", sendAgain: "Model switched; press Send again",
@@ -24,7 +24,7 @@
     "zh-Hant": {
       settings: "設定", settingsAria: "開啟 JEV Model Router 設定", probabilities: "JEV 前三推薦機率",
       analyzing: "分析中…", switching: "正在切換…", switched: "已切換",
-      switchedFallback: "已切換備用選項", switchedLowConfidence: "已切換（低信心）",
+      switchedFallback: "已切換備用選項", lowConfidenceRecommendation: "建議 {model}，請確認",
       switchedNoProbabilities: "已切換（無機率）", switchFailed: "切換失敗，請手動調整", effortSwitchFailed: "模型已切換，強度請手動調整",
       routeFailed: "判斷失敗，請手動選擇模型", manual: "已保留手動選擇",
       sendFailed: "切換失敗，請調整模型後再送出", sendAgain: "已切換模型，請再按一次送出",
@@ -43,7 +43,7 @@
     "zh-Hans": {
       settings: "设置", settingsAria: "打开 JEV Model Router 设置", probabilities: "JEV 前三推荐概率",
       analyzing: "分析中…", switching: "正在切换…", switched: "已切换",
-      switchedFallback: "已切换备用选项", switchedLowConfidence: "已切换（低置信度）",
+      switchedFallback: "已切换备用选项", lowConfidenceRecommendation: "建议 {model}，请确认",
       switchedNoProbabilities: "已切换（无概率）", switchFailed: "切换失败，请手动调整", effortSwitchFailed: "模型已切换，请手动调整强度",
       routeFailed: "判断失败，请手动选择模型", manual: "已保留手动选择",
       sendFailed: "切换失败，请调整模型后再发送", sendAgain: "已切换模型，请再按一次发送",
@@ -62,7 +62,7 @@
     ja: {
       settings: "設定", settingsAria: "JEV Model Router の設定を開く", probabilities: "JEV の上位候補と確率",
       analyzing: "分析中…", switching: "切り替え中…", switched: "切り替え済み",
-      switchedFallback: "代替候補に切り替え済み", switchedLowConfidence: "切り替え済み（低信頼）",
+      switchedFallback: "代替候補に切り替え済み", lowConfidenceRecommendation: "候補: {model}。確認してください",
       switchedNoProbabilities: "切り替え済み（確率なし）", switchFailed: "切り替え失敗。手動で選択してください", effortSwitchFailed: "モデルは切り替え済み。強度は手動で設定してください",
       routeFailed: "判定できません。モデルを手動で選択してください", manual: "手動での選択を維持します",
       sendFailed: "切り替えに失敗しました。送信前にモデルを確認してください", sendAgain: "モデルを切り替えました。もう一度送信してください",
@@ -81,7 +81,7 @@
     ko: {
       settings: "설정", settingsAria: "JEV Model Router 설정 열기", probabilities: "JEV 상위 추천 확률",
       analyzing: "분석 중…", switching: "전환 중…", switched: "전환 완료",
-      switchedFallback: "대체 옵션으로 전환됨", switchedLowConfidence: "전환 완료 (낮은 신뢰도)",
+      switchedFallback: "대체 옵션으로 전환됨", lowConfidenceRecommendation: "추천: {model}; 확인해 주세요",
       switchedNoProbabilities: "전환 완료 (확률 없음)", switchFailed: "전환 실패; 직접 선택하세요", effortSwitchFailed: "모델 전환 완료; 추론 강도는 직접 설정하세요",
       routeFailed: "판단 실패; 모델을 직접 선택하세요", manual: "수동 선택을 유지합니다",
       sendFailed: "전환 실패; 전송 전에 모델을 조정하세요", sendAgain: "모델 전환됨; 다시 전송하세요",

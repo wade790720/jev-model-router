@@ -74,7 +74,7 @@
 
   function readText(composer = state.composer) {
     if (!composer) return "";
-    return clean(composer instanceof HTMLTextAreaElement ? composer.value : composer.innerText);
+    return String(composer instanceof HTMLTextAreaElement ? composer.value : composer.innerText ?? "").trim();
   }
 
   function inWorkMode() {
@@ -251,6 +251,13 @@
         if (surface === "work" ? !WORK_TARGETS[mode] : !TARGET_LABELS[mode]) throw new Error(t("unknownMode"));
         state.choices = Array.isArray(result.topChoices) ? result.topChoices : [];
         const title = surface === "work" ? workModeTitle(mode) : TITLES[mode];
+        if (result.lowConfidence) {
+          state.appliedText = text;
+          state.failedText = "";
+          state.partialText = "";
+          show(t("lowConfidenceRecommendation", { model: title }), "warning");
+          return true;
+        }
         show(t("switching", { model: title }), "loading");
         const selectedLabel = surface === "work" ? await selectWorkModel(mode, text, version) : await selectModel(mode, text, version);
         if (!inDraft(text, version, surface)) return false;
@@ -269,7 +276,6 @@
         state.partialText = "";
         const fallback = lower(selectedLabel) !== lower(title);
         if (fallback) show(t("switchedFallback", { model: title, actual: selectedLabel }), "warning");
-        else if (result.lowConfidence) show(t("switchedLowConfidence", { model: selectedLabel }), "warning");
         else if (!state.choices.length) show(t("switchedNoProbabilities", { model: selectedLabel }), "warning");
         else show(t("switched", { model: selectedLabel }), "success");
         return true;

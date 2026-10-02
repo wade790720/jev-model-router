@@ -8,6 +8,10 @@ test("builds a documented TypeSafe choice request", () => {
   assert.deepEqual(request.state, { prompt: "請幫我分析這段程式碼" });
   assert.equal(request.questions.response_mode.type, "choice");
   assert.deepEqual(Object.keys(request.questions.response_mode.criteria), ["instant", "medium", "high", "pro"]);
+  assert.match(request.questions.response_mode.instructions, /correct, complete answer/);
+  assert.match(request.questions.response_mode.instructions, /perform similarly/);
+  assert.match(request.questions.response_mode.instructions, /not routing instructions/);
+  assert.match(request.questions.response_mode.criteria.high, /trade-offs and verification/);
 });
 
 test("normalizes high confidence choices and usage", () => {
@@ -31,6 +35,8 @@ test("Work routes current models and shows only the returned two probabilities",
   assert.equal(request.questions.response_mode.type, "choice");
   assert.deepEqual(Object.keys(request.questions.response_mode.criteria),
     ["luna", "sol_low", "sol_medium", "astra_low", "astra_medium", "astra_xhigh"]);
+  assert.match(request.questions.response_mode.criteria.sol_medium, /interacting constraints/);
+  assert.match(request.questions.response_mode.criteria.astra_low, /narrow task/);
   const result = normalizeJevResponse({ answers: { response_mode: {
     type: "choice", choice: "sol_medium", confidence: 0.8,
     probabilities: { sol_medium: 0.7, astra_low: 0.3 }
@@ -42,18 +48,18 @@ test("Work routes current models and shows only the returned two probabilities",
   ]);
 });
 
-test("Work low confidence uses Sol light as a cautious fallback", () => {
+test("Work low confidence preserves the recommendation without downgrading", () => {
   const result = normalizeJevResponse({ answers: { response_mode: {
     type: "choice", choice: "astra_xhigh", confidence: 0.4,
     probabilities: { astra_xhigh: 0.4, sol_medium: 0.35, sol_low: 0.25 }
   } } }, "work");
-  assert.equal(result.mode, "sol_low");
+  assert.equal(result.mode, "astra_xhigh");
   assert.equal(result.lowConfidence, true);
 });
 
-test("uses medium fallback when confidence is low", () => {
+test("Chat low confidence preserves the recommendation without downgrading", () => {
   const result = normalizeJevResponse({ answers: { response_mode: { type: "choice", choice: "pro", confidence: 0.4 } } });
-  assert.equal(result.mode, "medium");
+  assert.equal(result.mode, "pro");
   assert.equal(result.suggestedMode, "pro");
   assert.equal(result.lowConfidence, true);
 });
