@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JEV Model Router</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font: 14px/1.45 system-ui, sans-serif;
+      --page: light-dark(#f2f3f8, #111216);
+      --surface: light-dark(#fff, #1b1c22);
+      --raised: light-dark(#f7f7fb, #24262e);
+      --text: light-dark(#20212a, #f6f6f9);
+      --muted: light-dark(#626679, #aeb1c1);
+      --border: light-dark(#dfe1e9, #373a46);
+      --accent: #7565e5;
+      --accent-wash: light-dark(#f2efff, #302b4b);
+    }
+    * { box-sizing: border-box; }
+    html { background: var(--page); }
+    body { width: 360px; margin: 0; color: var(--text); background: var(--surface); }
+    .shell { padding: 20px; }
+    .brand { display: flex; align-items: center; gap: 11px; }
+    .brand-mark { display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 12px; color: white; background: linear-gradient(145deg, #9787ff, #6551d6); box-shadow: 0 4px 12px #6551d644; font-size: 20px; font-weight: 800; }
+    .brand-copy { min-width: 0; flex: 1; }
+    h1 { margin: 0; font-size: 17px; line-height: 1.25; letter-spacing: -.02em; }
+    .brand-subtitle { margin: 2px 0 0; color: var(--muted); font-size: 12px; }
+    .scope-chip { flex: none; padding: 4px 7px; border: 1px solid var(--border); border-radius: 999px; color: var(--muted); background: var(--raised); font-size: 11px; white-space: nowrap; }
+    .intro { margin: 15px 0 19px; color: var(--muted); font-size: 13px; }
+    fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+    legend, .field-label { display: block; margin: 0 0 8px; padding: 0; color: var(--text); font-size: 13px; font-weight: 700; }
+    .mode-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+    .mode-card { position: relative; cursor: pointer; }
+    .mode-card input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+    .mode-content { display: block; min-height: 73px; padding: 12px; border: 1px solid var(--border); border-radius: 11px; background: var(--raised); transition: border-color .15s, background .15s, box-shadow .15s; }
+    .mode-title { display: block; padding-right: 18px; font-size: 13px; font-weight: 700; }
+    .mode-hint { display: block; margin-top: 5px; color: var(--muted); font-size: 11px; line-height: 1.35; }
+    .mode-dot { position: absolute; top: 14px; right: 12px; width: 14px; height: 14px; border: 1.5px solid var(--muted); border-radius: 50%; }
+    .mode-card input:checked + .mode-content { border-color: var(--accent); background: var(--accent-wash); box-shadow: 0 0 0 1px var(--accent) inset; }
+    .mode-card input:checked + .mode-content .mode-dot { border: 4px solid var(--accent); background: white; }
+    .mode-card input:focus-visible + .mode-content, button:focus-visible, .field:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .details-panel { margin-top: 17px; }
+    .field-label { margin-bottom: 7px; }
+    .field, button { font: inherit; }
+    .field { display: block; width: 100%; height: 42px; padding: 9px 12px; border: 1px solid var(--border); border-radius: 9px; outline: none; color: var(--text); background: var(--raised); font-size: 13px; }
+    .field::placeholder { color: var(--muted); opacity: 1; }
+    .field + .field-label { margin-top: 14px; }
+    .note { display: flex; gap: 8px; margin: 11px 0 0; color: var(--muted); font-size: 12px; line-height: 1.4; }
+    .note-mark { display: grid; place-items: center; flex: none; width: 16px; height: 16px; border: 1px solid var(--border); border-radius: 50%; font-size: 11px; font-weight: 700; }
+    .button-stack { display: grid; gap: 8px; margin-top: 14px; }
+    button { min-height: 40px; padding: 9px 13px; border: 1px solid transparent; border-radius: 9px; color: white; background: var(--accent); font-weight: 700; cursor: pointer; }
+    button:hover { filter: brightness(1.07); }
+    button.secondary { width: 100%; border-color: var(--border); color: var(--text); background: var(--raised); }
+    .footer { margin-top: 19px; padding-top: 16px; border-top: 1px solid var(--border); }
+    #save { width: 100%; }
+    #status { margin-top: 11px; padding: 10px 11px; border: 1px solid light-dark(#a7dac0, #2f7250); border-radius: 9px; color: light-dark(#17613b, #8fe0ad); background: light-dark(#edf9f2, #173427); font-size: 12px; }
+    #status[data-kind="error"] { border-color: light-dark(#efb3b3, #894848); color: light-dark(#a82b2b, #ffacac); background: light-dark(#fff3f3, #3b2424); }
+    @media (min-width: 600px) { body { width: min(440px, calc(100vw - 48px)); margin: 48px auto; border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 16px 40px #0002; } .shell { padding: 26px; } }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="brand">
+      <span class="brand-mark" aria-hidden="true">J</span>
+      <div class="brand-copy"><h1>JEV Model Router</h1><p class="brand-subtitle" data-i18n="popupSubtitle">Choose the right model for each draft</p></div>
+      <span class="scope-chip" data-i18n="textOnly">Text only</span>
+    </header>
+    <p class="intro" data-i18n="optionsIntro">Routes ChatGPT text drafts. Images and attachments are not included.</p>
+    <fieldset>
+      <legend data-i18n="connectionMode">Connection method</legend>
+      <div class="mode-grid">
+        <label class="mode-card">
+          <input type="radio" name="connectionMode" value="personal">
+          <span class="mode-content"><span class="mode-title" data-i18n="personalMode">My API key</span><span class="mode-hint" data-i18n="personalModeHint">Connect directly to TypeSafe</span><span class="mode-dot" aria-hidden="true"></span></span>
+        </label>
+        <label class="mode-card">
+          <input type="radio" name="connectionMode" value="subscription">
+          <span class="mode-content"><span class="mode-title" data-i18n="subscriptionMode">US$5/month</span><span class="mode-hint" data-i18n="subscriptionModeHint">Use the router service</span><span class="mode-dot" aria-hidden="true"></span></span>
+        </label>
+      </div>
+    </fieldset>
+    <section class="details-panel" id="personalFields" hidden>
+      <label class="field-label" for="typeSafeKey">TypeSafe API key</label>
+      <input class="field" id="typeSafeKey" type="password" autocomplete="off" spellcheck="false" placeholder="TypeSafe API key">
+      <p class="note"><span class="note-mark" aria-hidden="true">i</span><span data-i18n="personalNote">The key stays in this browser's extension storage. Drafts go directly to TypeSafe.</span></p>
+    </section>
+    <section class="details-panel" id="subscriptionFields" hidden>
+      <label class="field-label" for="workerUrl" data-i18n="serviceUrl">Service URL</label>
+      <input class="field" id="workerUrl" type="url" spellcheck="false" placeholder="https://your-worker.workers.dev">
+      <label class="field-label" for="activationCode" data-i18n="activationCode">Subscription activation code</label>
+      <input class="field" id="activationCode" type="password" autocomplete="off" spellcheck="false">
+      <div class="button-stack"><button class="secondary" id="subscribe" type="button" data-i18n="subscribe">Subscribe</button><button class="secondary" id="manage" type="button" data-i18n="manage">Manage or cancel subscription</button></div>
+      <p class="note"><span class="note-mark" aria-hidden="true">i</span><span data-i18n="subscriptionNote">Drafts are forwarded to TypeSafe through the service. Fair-use limits apply.</span></p>
+    </section>
+    <footer class="footer">
+      <button id="save" type="button" data-i18n="save">Save settings</button>
+      <div id="status" role="status" hidden></div>
+    </footer>
+  </main>
+  <script src="i18n.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>
