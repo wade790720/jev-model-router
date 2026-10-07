@@ -1,72 +1,143 @@
-# Smart ChatGPT
+# Smart ChatGPT（ChatGPT 智慧選模型）
 
-在 ChatGPT 網頁輸入草稿時，用 [TypeSafe AI Jev](https://docs.typesafe.ai/introduction) 判斷適合的模型／推理強度，並嘗試在送出前切換。繁體中文介面的產品名稱是「ChatGPT 智慧選模型」。這是獨立開發的 Chrome／Edge Manifest V3 擴充功能，並非 OpenAI 或 TypeSafe AI 官方產品。
+![version](https://img.shields.io/badge/version-0.3.2-blue)
+![status](https://img.shields.io/badge/status-internal%20testing-orange)
+![node](https://img.shields.io/badge/node-%3E%3D22.13-339933)
+![chrome](https://img.shields.io/badge/Chrome%20%2F%20Edge-Manifest%20V3-4285F4)
 
-**目前狀態：** v0.2.7 原型。支援 `chatgpt.com` 的「對話」與「工作」文字輸入框；不讀取聊天歷史、附件或圖片，也不控制原生桌面 App。模型切換依賴 ChatGPT 網頁 DOM，網頁改版後需要重新驗證。
+這是一個 Chrome/Edge 擴充功能，它讀取 ChatGPT 輸入框的草稿。
+由 TypeSafe AI Jev 推薦模型與推理強度，只顯示建議，模型由使用者自己切換。
 
-本 README 是維護者的入口。部署與手動驗收看 [安裝與部署](docs/SETUP.md)，資料流向看 [隱私說明](docs/PRIVACY.md)，狀態管理、路由與付款流程的細節看 [架構與維護指南](docs/ARCHITECTURE.md)。
+## 目錄
 
-## 快速開始
+- [背景](#背景)
+- [安裝](#安裝)
+- [使用方式](#使用方式)
+- [架構](#架構)
+- [專案結構](#專案結構)
+- [部署進度](#部署進度)
+- [貢獻](#貢獻)
+- [授權](#授權)
 
-1. 取得專案，進入 `jev-model-router` 目錄。在 Chrome 開啟 `chrome://extensions`（Edge 為 `edge://extensions`），啟用開發人員模式，選「載入未封裝項目」，指向 [`extension/`](extension/)。
-2. 點擴充功能圖示，選「自備 API Key」，填入 TypeSafe key 並儲存。這條路徑不需要 Worker、D1 或 Stripe。
-3. 開啟 `https://chatgpt.com/`，輸入文字並停頓約 950 毫秒。輸入框右上方會顯示路由狀態與最多三個候選機率。
-4. 修改擴充功能原始碼後，到 `chrome://extensions` 按「重新載入」，再重新整理 ChatGPT 頁面。詳盡驗收情境見 [SETUP.md](docs/SETUP.md)。
+## 背景
 
-本擴充功能沒有前端建置步驟。若要修改程式，請先安裝 Node.js，並在專案根目錄執行：
+ChatGPT 有很多模型和推理強度，簡單的問題用強模型會浪費時間；
+困難的問題用弱模型會出錯，本專案讓 Jev 先讀草稿，再推薦足以可靠完成任務的最輕選項。
+
+## 安裝
+| 項目 | 版本或說明 |
+| --- | --- |
+| 作業系統 | Windows、macOS、Linux 皆可 |
+| 瀏覽器 | Chrome 或 Edge 桌面版（不支援原生桌面 App） |
+| Node.js | 22.13 以上 |
+| npm | 隨 Node.js 安裝 |
+| Wrangler | 只有部署 Worker 時需要，用 `npx wrangler@latest` 執行 |
+
+擴充功能不需要建置，也不載入外部字型或 CDN。
+
+### 安裝擴充功能
+
+1. 下載本專案。
+2. 在瀏覽器開啟 `chrome://extensions`（Edge 為 `edge://extensions`）。
+3. 開啟右上角的「開發人員模式」。
+4. 按「載入未封裝項目」，選擇 `extension/` 資料夾。
+
+### 安裝開發依賴
 
 ```sh
-npm run check
-npm test
+npm ci
 ```
 
-測試使用 Node 內建工具，未連線到真實 ChatGPT、TypeSafe、Cloudflare 或 Stripe；修改模型選單操作後，仍須在實際帳號中人工驗收。
+## 使用方式
+開啟擴充功能的設定頁，選一種接入方式：
 
-## 運作方式
+| 接入方式 | 誰持有 TypeSafe Key | 適用情況 |
+| --- | --- | --- |
+| 託管模式（預設） | Cloudflare Worker | 有會員憑證的使用者，正式會員登入尚未開通，目前只能用管理者核發的內部測試憑證。 |
+| 自備 Key 模式 | 你的瀏覽器 | 你有自己的 TypeSafe API Key，開啟「進階設定」，勾選「使用自己的 TypeSafe API Key」。 |
 
-```mermaid
-flowchart LR
-    A[ChatGPT 文字草稿] --> B[content.js<br/>偵測輸入與工作模式]
-    B -->|JEV_ROUTE| C[background.js]
-    C -->|自備 Key| D[TypeSafe Jev API]
-    C -->|訂閱啟用碼| E[Cloudflare Worker]
-    E -->|服務端 Key| D
-    D --> F[route.js<br/>解析 Choice 與信心]
-    F --> B
-    B --> G[顯示結果並驗證模型切換]
+儲存設定後即可使用。
+
+### 在 ChatGPT 使用
+
+1. 重新整理 ChatGPT 分頁。
+2. 在輸入框打字，停頓約 950 ms 後，草稿會送到 TypeSafe 分析。
+3. 輸入框旁會顯示「建議使用」和最多三個候選的機率。
+4. 依建議自行切換模型，再送出，送出不會等待推薦。
+
+燈號意義：
+
+- 綠燈：推薦已完成。這不代表模型已切換，也不保證答案正確。
+- 黃燈：Jev 的信心低於 0.45，建議僅供參考。
+- 紅燈：推薦失敗，ChatGPT 仍可正常送出。
+
+### 測試與檢查
+
+```sh
+npm test         # 執行全部單元測試
+npm run check    # 檢查語法與配色檔是否同步
 ```
 
-1. [`extension/content.js`](extension/content.js) 讀取目前輸入框的文字，區分「對話」或「工作」。輸入停頓約 950 毫秒後開始判斷；按送出時也會檢查當次草稿是否已處理。草稿的換行與縮排會保留。
-2. [`extension/background.js`](extension/background.js) 依設定選擇直連 TypeSafe，或把 `{ text, surface }` 送到 Worker。兩條路徑共用 [`extension/route.js`](extension/route.js) 的請求格式與回應解析；Worker 也直接匯入該檔案。
-3. `route.js` 向 Jev 提出一個 `Choice` 問題：先確保回答品質，品質相近時再選較快、較省的方案。對話模式有 `instant / medium / high / pro`；工作模式有 Luna、Sol、Astra 共六種模型與推理強度組合。
-4. 回應包含選項、`probabilities` 和 `confidence`。`confidence < 0.45` 時只顯示建議、保留目前模型；其他情況嘗試操作 ChatGPT 選單。只有確認畫面上已選取目標模型與強度後，才顯示切換成功。
+測試不使用真實 Key、會員資料或 ChatGPT 對話。
 
-狀態燈：綠色代表已確認切換；黃色表示建議待確認、備用選項或部分切換；紅色表示無法確認切換。手動改選後，擴充功能不再干預當前模式的這份草稿。
+### 本機診斷（選用）
 
-## 專案地圖
+```sh
+npm run diagnostics:collect   # 啟動本機收集器（127.0.0.1:43127）
+npm run diagnostics:summary   # 查看近 14 天統計
+```
 
-| 路徑 | 維護重點 |
+診斷不上傳草稿、Key 或完整 DOM，細節見 [本機診斷](docs/DIAGNOSTICS.md)。
+
+## 架構
+
+```text
+ChatGPT 輸入框 → content.js（debounce、IME 保護）→ background.js
+  ├ 託管模式 → Cloudflare Worker → 會員與 session 檢查 → 用量限制 → Jev
+  └ 自備 Key 模式 → Jev
+→ 回傳 choice、confidence、前三名機率 → 只顯示建議
+```
+
+Jev 從固定選項中選一個：
+
+| ChatGPT 模式 | 選項 |
 | --- | --- |
-| [`extension/content.js`](extension/content.js) | 輸入框偵測、debounce、IME 保護、焦點還原、模型選單操作與狀態 UI。最容易受 ChatGPT DOM 改版影響。 |
-| [`extension/route.js`](extension/route.js) | Jev `Choice` 指令、選項定義、回應驗證及前三候選。新增模型通常從這裡開始。 |
-| [`extension/background.js`](extension/background.js) | API 路徑選擇、10 秒逾時、擴充功能與服務端通訊。 |
-| [`extension/options.html`](extension/options.html)、[`options.js`](extension/options.js)、[`i18n.js`](extension/i18n.js) | 接入方式、金鑰／啟用碼設定、語系文字。 |
-| [`worker/src/index.js`](worker/src/index.js)、[`stripe.js`](worker/src/stripe.js) | 訂閱路由、用量限制、Checkout、啟用、Portal 與 webhook。 |
-| [`worker/schema.sql`](worker/schema.sql)、[`wrangler.jsonc`](worker/wrangler.jsonc) | D1 表結構、Worker 綁定、限制與排程；目前有部署佔位值。 |
-| [`tests/`](tests/) | 路由、DOM 切換、語系、設定 UI、Worker 與 Stripe 的模擬測試。 |
+| 對話 | `instant`、`medium`、`high`、`pro` |
+| 工作 | `luna`、`sol_low`、`sol_medium`、`astra_low`、`astra_medium`、`astra_xhigh` |
 
-## 常見修改入口
+ChatGPT 新增模型時，必須手動更新 `extension/route.js`，程式不會自動新增選項。
 
-- **調整 Jev 判斷標準：** 修改 `buildJevRequest()` 的 `instructions` 與 `criteria`，並更新 `tests/route.test.js`。`confidence` 是選項分布的信心指標，不是「答對機率」。
-- **新增 ChatGPT 模型：** 同步更新 `route.js` 的選項與說明、`content.js` 的模型／推理強度對應與選單辨識、UI 文案及測試。現有版本不會自動把網頁上新增的模型加入 Jev 候選。
-- **ChatGPT 選單改版：** 優先檢查 `findComposer()`、`findModelButton()`、`selectModel()` 與 `selectWorkModel()`；不要僅憑點擊成功判定切換成功。測試需涵蓋選單關閉、模型名稱與推理強度確認。
-- **訂閱或用量規則：** 修改 Worker 與對應測試，並同步更新 [SETUP.md](docs/SETUP.md) 的公開說明。金鑰與 D1 ID 不能提交到 Git。
+## 專案結構
 
-## 已知邊界
+```text
+extension/
+  content.js         偵測輸入框與模式，排除過期回應，顯示推薦
+  route.js           模型選項、判斷標準、回應驗證（擴充功能與 Worker 共用）
+  background.js      選擇接入方式，處理逾時
+  service-config.js  公開服務網址與 Skool 網址（不含私鑰）
+  options.*          設定頁
+  diagnostics.js     本機推薦診斷
+  _locales/          en、zh_TW、zh_CN、ja、ko
+worker/
+  src/skool.js       目前的部署入口：健康檢查、推薦、管理者會員管理
+  src/index.js       共用路由與用量限制（舊 Stripe 程式保留，不對外開放）
+  migrations/        D1 資料表變更
+scripts/             診斷收集器、配色同步、內部測試工具
+tests/               node:test 單元測試
+docs/                部署、隱私、診斷與歷史文件
+```
 
-- 使用者文字在停頓後就可能送往 TypeSafe；不必按 ChatGPT「送出」。自備 Key 時直接傳送；訂閱模式先經過你的 Worker。詳細資料處理見 [PRIVACY.md](docs/PRIVACY.md)。
-- ChatGPT 沒有提供此擴充功能使用的官方模型切換介面。方案權限、語系與網頁改版都可能讓選單操作失敗；失敗時會提示手動調整。
-- 模型建議是分類結果，尚未有真實使用資料的準確率基準。`npm test` 驗證的是程式行為，不代表 Jev 在所有任務上選對模型。
-- 訂閱後端是可部署的原型，`worker/wrangler.jsonc` 仍含 D1／Stripe 佔位值；公開收費前需完成服務設定、真實付款驗收與正式政策文件。
+## 貢獻
 
-本專案使用 [TypeSafe Choice API](https://docs.typesafe.ai/primitives/choice) 取得結構化決策。UI 參考 [shadcn/ui Base Alert](https://ui.shadcn.com/docs/components/base/alert) 的組合方式，以原生 DOM/CSS 實作，無需 React 或建置工具。
+有問題請直接聯絡維護者。
+
+提交變更前：
+
+1. 執行 `npm test` 與 `npm run check`，兩者都必須通過。
+2. 改路由規則時，同時更新 `extension/route.js` 和對應測試。
+3. 不要把 Key、token 或 Secret 寫進 Git、文件或擴充功能程式。
+4. UI 或 DOM 相關變更，要在真實 Chrome／Edge 帳號上驗證對話、工作模式、IME 與明暗主題。
+
+## 授權
+
+`extension/vendor/radix-colors.css` 來自 Radix Colors，授權見 [RADIX-LICENSE.txt](extension/vendor/RADIX-LICENSE.txt)。
