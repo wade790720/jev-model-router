@@ -68,12 +68,14 @@ async function jevDecision(env, text, surface) {
   }
 }
 
-async function route(request, env) {
+export async function route(request, env) {
   if (!env.DB) return json({ error: "Database is not configured" }, 503);
   const token = request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
   if (!token?.startsWith("jmr_") || token.length !== 68) return json({ error: "需要有效的訂閱啟用碼" }, 401);
   const tokenHash = await sha256(token);
-  const license = await env.DB.prepare("SELECT status FROM licenses WHERE token_hash = ?").bind(tokenHash).first();
+  const license = env.MEMBERSHIP_PROVIDER === "skool"
+    ? await env.DB.prepare("SELECT m.status FROM member_sessions s JOIN members m ON m.member_hash = s.member_hash WHERE s.token_hash = ? AND s.expires_at > unixepoch() AND m.valid_until > unixepoch()").bind(tokenHash).first()
+    : await env.DB.prepare("SELECT status FROM licenses WHERE token_hash = ?").bind(tokenHash).first();
   if (license?.status !== "active") return json({ error: "訂閱未啟用或已到期" }, 403);
   const body = await request.json().catch(() => null);
   const text = body?.text;

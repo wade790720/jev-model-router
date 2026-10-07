@@ -3,7 +3,14 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "colors:sync": "node scripts/sync-colors.js",
+    "colors:check": "node scripts/sync-colors.js --check",
     "test": "node --test",
-    "check": "node --check extension/background.js && node --check extension/content.js && node --check extension/i18n.js && node --check extension/options.js && node --check extension/route.js && node --check worker/src/index.js && node --check worker/src/stripe.js"
+    "check": "node --check extension/background.js && node --check extension/content.js && node --check extension/i18n.js && node --check extension/options.js && node --check extension/options-view.js && node --check extension/service-config.js && node --check extension/route.js && node --check extension/diagnostics.js && node --check scripts/diagnostic-collector.js && node --check scripts/diagnostic-summary.js && node --check worker/src/skool.js && node --check worker/src/index.js && node --check worker/src/stripe.js && node --check scripts/sync-colors.js && node scripts/sync-colors.js --check",
+    "diagnostics:collect": "node scripts/diagnostic-collector.js",
+    "diagnostics:summary": "node scripts/diagnostic-summary.js"
+  },
+  "dependencies": {
+    "@radix-ui/colors": "^3.0.0"
   }
 }

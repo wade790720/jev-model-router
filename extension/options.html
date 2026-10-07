@@ -4,58 +4,85 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Smart ChatGPT</title>
+  <script src="options-view.js"></script>
+  <script src="service-config.js"></script>
+  <link rel="stylesheet" href="vendor/radix-colors.css">
   <style>
     :root {
       color-scheme: light dark;
       font: 14px/1.45 system-ui, sans-serif;
-      --page: light-dark(#f2f3f8, #111216);
-      --surface: light-dark(#fff, #1b1c22);
-      --raised: light-dark(#f7f7fb, #24262e);
-      --text: light-dark(#20212a, #f6f6f9);
-      --muted: light-dark(#626679, #aeb1c1);
-      --border: light-dark(#dfe1e9, #373a46);
-      --accent: #7565e5;
-      --accent-wash: light-dark(#f2efff, #302b4b);
+      --page: light-dark(var(--sai-sand-2), var(--sai-mauve-1));
+      --surface: light-dark(var(--sai-sand-1), var(--sai-mauve-2));
+      --raised: light-dark(var(--sai-sand-2), var(--sai-mauve-3));
+      --text: var(--sai-mauve-12);
+      --muted: var(--sai-mauve-11);
+      --border: var(--sai-mauve-6);
+      --control-border: var(--sai-mauve-9);
+      --accent: var(--sai-violet-9);
+      --accent-hover: light-dark(var(--sai-violet-10), color-mix(in srgb, var(--sai-violet-9) 88%, black));
+      --accent-wash: var(--sai-violet-3);
+      --selection: light-dark(var(--sai-violet-9), var(--sai-violet-11));
+      --focus: var(--sai-violet-11);
+      --on-accent: #fff;
+      --success-surface: var(--sai-green-3);
+      --success-border: var(--sai-green-7);
+      --success-text: var(--sai-green-12);
+      --error-surface: var(--sai-red-3);
+      --error-border: var(--sai-red-7);
+      --error-text: var(--sai-red-12);
+      --ease-out: cubic-bezier(.23, 1, .32, 1);
     }
     * { box-sizing: border-box; }
     html { background: var(--page); }
-    body { width: 360px; margin: 0; color: var(--text); background: var(--surface); }
+    body { width: min(360px, 100vw); margin: 0; color: var(--text); background: var(--surface); }
+    html[data-view="popup"], html[data-view="popup"] body { width: 360px; min-width: 360px; }
+    ::selection { color: var(--text); background: var(--accent-wash); }
     .shell { padding: 20px; }
     .brand { display: flex; align-items: center; gap: 11px; }
-    .brand-mark { display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 12px; color: white; background: linear-gradient(145deg, #9787ff, #6551d6); box-shadow: 0 4px 12px #6551d644; font-size: 20px; font-weight: 800; }
-    .brand-copy { min-width: 0; flex: 1; }
+    .brand-mark { display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 12px; color: var(--sai-violet-11); background: var(--sai-violet-3); border: 1px solid var(--sai-violet-7); font-size: 20px; font-weight: 700; }
+    .brand-copy { min-width: 0; flex: 1; overflow-wrap: anywhere; }
     h1 { margin: 0; font-size: 17px; line-height: 1.25; letter-spacing: -.02em; }
     .brand-subtitle { margin: 2px 0 0; color: var(--muted); font-size: 12px; }
     .scope-chip { flex: none; padding: 4px 7px; border: 1px solid var(--border); border-radius: 999px; color: var(--muted); background: var(--raised); font-size: 11px; white-space: nowrap; }
     .intro { margin: 15px 0 19px; color: var(--muted); font-size: 13px; }
     fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
     legend, .field-label { display: block; margin: 0 0 8px; padding: 0; color: var(--text); font-size: 13px; font-weight: 700; }
-    .mode-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
-    .mode-card { position: relative; cursor: pointer; }
-    .mode-card input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-    .mode-content { display: block; min-height: 73px; padding: 12px; border: 1px solid var(--border); border-radius: 11px; background: var(--raised); transition: border-color .15s, background .15s, box-shadow .15s; }
-    .mode-title { display: block; padding-right: 18px; font-size: 13px; font-weight: 700; }
-    .mode-hint { display: block; margin-top: 5px; color: var(--muted); font-size: 11px; line-height: 1.35; }
-    .mode-dot { position: absolute; top: 14px; right: 12px; width: 14px; height: 14px; border: 1.5px solid var(--muted); border-radius: 50%; }
-    .mode-card input:checked + .mode-content { border-color: var(--accent); background: var(--accent-wash); box-shadow: 0 0 0 1px var(--accent) inset; }
-    .mode-card input:checked + .mode-content .mode-dot { border: 4px solid var(--accent); background: white; }
-    .mode-card input:focus-visible + .mode-content, button:focus-visible, .field:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    button:focus-visible, .field:focus-visible, #diagnosticsEnabled:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
     .details-panel { margin-top: 17px; }
     .field-label { margin-bottom: 7px; }
     .field, button { font: inherit; }
-    .field { display: block; width: 100%; height: 42px; padding: 9px 12px; border: 1px solid var(--border); border-radius: 9px; outline: none; color: var(--text); background: var(--raised); font-size: 13px; }
+    .field { display: block; width: 100%; height: 42px; padding: 9px 12px; border: 1px solid var(--control-border); border-radius: 9px; color: var(--text); background: var(--raised); font-size: 13px; caret-color: var(--focus); }
     .field::placeholder { color: var(--muted); opacity: 1; }
     .field + .field-label { margin-top: 14px; }
-    .note { display: flex; gap: 8px; margin: 11px 0 0; color: var(--muted); font-size: 12px; line-height: 1.4; }
+    .note { display: flex; gap: 8px; margin: 11px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
     .note-mark { display: grid; place-items: center; flex: none; width: 16px; height: 16px; border: 1px solid var(--border); border-radius: 50%; font-size: 11px; font-weight: 700; }
     .button-stack { display: grid; gap: 8px; margin-top: 14px; }
-    button { min-height: 40px; padding: 9px 13px; border: 1px solid transparent; border-radius: 9px; color: white; background: var(--accent); font-weight: 700; cursor: pointer; }
-    button:hover { filter: brightness(1.07); }
-    button.secondary { width: 100%; border-color: var(--border); color: var(--text); background: var(--raised); }
+    button { min-height: 40px; padding: 9px 13px; border: 1px solid transparent; border-radius: 9px; color: var(--on-accent); background: var(--accent); font-weight: 700; cursor: pointer; }
+    button { touch-action: manipulation; }
+    button:disabled { cursor: wait; opacity: .65; }
+    button[aria-busy="true"]::after { content: " …"; }
+    @media (hover: hover) and (pointer: fine) { button:hover:not(:disabled) { background: var(--accent-hover); } button.secondary:hover:not(:disabled) { background: var(--sai-mauve-4); } }
+    button.secondary { width: 100%; border-color: var(--control-border); color: var(--text); background: var(--raised); }
+    button:active:not(:disabled) { background: color-mix(in srgb, var(--accent) 88%, black); }
+    button.secondary:active:not(:disabled) { background: var(--sai-mauve-5); }
     .footer { margin-top: 19px; padding-top: 16px; border-top: 1px solid var(--border); }
     #save { width: 100%; }
-    #status { margin-top: 11px; padding: 10px 11px; border: 1px solid light-dark(#a7dac0, #2f7250); border-radius: 9px; color: light-dark(#17613b, #8fe0ad); background: light-dark(#edf9f2, #173427); font-size: 12px; }
-    #status[data-kind="error"] { border-color: light-dark(#efb3b3, #894848); color: light-dark(#a82b2b, #ffacac); background: light-dark(#fff3f3, #3b2424); }
+    .advanced { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); }
+    summary { cursor: pointer; font-size: 13px; font-weight: 600; }
+    summary:focus-visible, input[type="checkbox"]:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+    details[open] > summary { margin-bottom: 12px; }
+    input[type="checkbox"] { accent-color: var(--accent); flex: none; }
+    #status { margin-top: 11px; padding: 10px 11px; border: 1px solid var(--success-border); border-radius: 9px; color: var(--success-text); background: var(--success-surface); font-size: 12px; }
+    #status[data-kind="error"] { border-color: var(--error-border); color: var(--error-text); background: var(--error-surface); }
+    .diagnostics { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+    .diagnostics .field-label { margin-bottom: 10px; }
+    .diagnostics-toggle { display: flex; align-items: center; gap: 8px; min-height: 32px; cursor: pointer; font-size: 12px; }
+    #diagnosticsEnabled { flex: none; width: 16px; height: 16px; margin: 0; accent-color: var(--accent); }
+    #diagnosticsStatus { align-items: baseline; gap: 7px; margin: 12px 0 8px; }
+    #diagnosticsStatus:not(:empty)::before { content: ""; flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--sai-amber-11); }
+    #diagnosticsStatus[data-connected="true"]::before { background: var(--sai-green-11); }
+    #exportDiagnostics { width: auto; min-height: 32px; padding: 6px 10px; font-size: 12px; font-weight: 500; }
+    @media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) { button:active:not(:disabled):not(:focus-visible) { transform: scale(.98); } button:not(:focus-visible) { transition: transform 120ms var(--ease-out); } }
     @media (min-width: 600px) { body { width: min(440px, calc(100vw - 48px)); margin: 48px auto; border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 16px 40px #0002; } .shell { padding: 26px; } }
     [hidden] { display: none !important; }
   </style>
@@ -68,36 +95,40 @@
       <span class="scope-chip" data-i18n="textOnly">Text only</span>
     </header>
     <p class="intro" data-i18n="optionsIntro">Routes ChatGPT text drafts. Images and attachments are not included.</p>
-    <fieldset>
-      <legend data-i18n="connectionMode">Connection method</legend>
-      <div class="mode-grid">
-        <label class="mode-card">
-          <input type="radio" name="connectionMode" value="personal">
-          <span class="mode-content"><span class="mode-title" data-i18n="personalMode">My API key</span><span class="mode-hint" data-i18n="personalModeHint">Connect directly to TypeSafe</span><span class="mode-dot" aria-hidden="true"></span></span>
-        </label>
-        <label class="mode-card">
-          <input type="radio" name="connectionMode" value="subscription">
-          <span class="mode-content"><span class="mode-title" data-i18n="subscriptionMode">US$5/month</span><span class="mode-hint" data-i18n="subscriptionModeHint">Use the router service</span><span class="mode-dot" aria-hidden="true"></span></span>
-        </label>
-      </div>
-    </fieldset>
-    <section class="details-panel" id="personalFields" hidden>
-      <label class="field-label" for="typeSafeKey">TypeSafe API key</label>
-      <input class="field" id="typeSafeKey" type="password" autocomplete="off" spellcheck="false" placeholder="TypeSafe API key">
-      <p class="note"><span class="note-mark" aria-hidden="true">i</span><span data-i18n="personalNote">The key stays in this browser's extension storage. Drafts go directly to TypeSafe.</span></p>
+    <section id="subscriptionFields" aria-labelledby="hostedHeading">
+      <h2 class="field-label" id="hostedHeading" data-i18n="hostedTitle">Hosted recommendations</h2>
+      <p class="note" data-i18n="hostedHelp">Sign in with the email used for your paid Skool membership.</p>
+      <div class="button-stack"><button id="login" type="button" data-i18n="memberLogin">Member sign-in</button><button class="secondary" id="subscribe" type="button" data-i18n="skoolSubscription">Skool membership</button></div>
+      <p class="note" id="subscriptionNote" data-i18n="subscriptionNote"></p>
+      <details class="advanced">
+        <summary data-i18n="internalTesting">Internal testing access</summary>
+        <label class="field-label" for="activationCode" data-i18n="activationCode">Access token</label>
+        <input class="field" id="activationCode" type="password" autocomplete="off" spellcheck="false" aria-describedby="testAccessNote">
+        <input id="workerUrl" type="hidden">
+        <p class="note" id="testAccessNote" data-i18n="testAccessNote"></p>
+      </details>
     </section>
-    <section class="details-panel" id="subscriptionFields" hidden>
-      <label class="field-label" for="workerUrl" data-i18n="serviceUrl">Service URL</label>
-      <input class="field" id="workerUrl" type="url" spellcheck="false" placeholder="https://your-worker.workers.dev">
-      <label class="field-label" for="activationCode" data-i18n="activationCode">Subscription activation code</label>
-      <input class="field" id="activationCode" type="password" autocomplete="off" spellcheck="false">
-      <div class="button-stack"><button class="secondary" id="subscribe" type="button" data-i18n="subscribe">Subscribe</button><button class="secondary" id="manage" type="button" data-i18n="manage">Manage or cancel subscription</button></div>
-      <p class="note"><span class="note-mark" aria-hidden="true">i</span><span data-i18n="subscriptionNote">Drafts are forwarded to TypeSafe through the service. Fair-use limits apply.</span></p>
-    </section>
+    <details class="advanced" id="advanced">
+      <summary data-i18n="advancedSettings">Advanced settings</summary>
+      <label class="diagnostics-toggle"><input id="usePersonalKey" type="checkbox"> <span data-i18n="usePersonalKey">Use my TypeSafe API key</span></label>
+      <section class="details-panel" id="personalFields" hidden>
+        <label class="field-label" for="typeSafeKey">TypeSafe API key</label>
+        <input class="field" id="typeSafeKey" type="password" autocomplete="off" spellcheck="false" placeholder="TypeSafe API key" aria-describedby="personalNote">
+        <p class="note" id="personalNote"><span class="note-mark" aria-hidden="true">i</span><span data-i18n="personalNote"></span></p>
+      </section>
+    </details>
+    <p class="note" id="consentNote" data-i18n="consentNote"></p>
     <footer class="footer">
       <button id="save" type="button" data-i18n="save">Save settings</button>
-      <div id="status" role="status" hidden></div>
+      <div id="status" role="status" aria-atomic="true" hidden></div>
     </footer>
+    <details class="diagnostics">
+      <summary id="diagnosticsHeading" data-i18n="diagnosticsTitle">Local diagnostics (testing)</summary>
+      <label class="diagnostics-toggle"><input id="diagnosticsEnabled" type="checkbox" aria-describedby="diagnosticsNote"> <span data-i18n="diagnosticsEnabled">Collect switching diagnostics</span></label>
+      <p class="note" id="diagnosticsNote" data-i18n="diagnosticsNote">No drafts, conversations or keys. Records go only to the local collector on this computer.</p>
+      <p class="note" id="diagnosticsStatus" role="status"></p>
+      <button class="secondary" id="exportDiagnostics" type="button" data-i18n="exportDiagnostics">Export diagnostics</button>
+    </details>
   </main>
   <script src="i18n.js"></script>
   <script src="options.js"></script>

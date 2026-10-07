@@ -6,8 +6,24 @@ import { runInNewContext } from "node:vm";
 const source = readFileSync(new URL("../extension/content.js", import.meta.url), "utf8");
 const cssSource = readFileSync(new URL("../extension/content.css", import.meta.url), "utf8");
 const i18nSource = readFileSync(new URL("../extension/i18n.js", import.meta.url), "utf8");
-const instrumented = source.replace(/\n\}\)\(\);\s*$/, "\n  globalThis.__jevTest = { selectedLabelMatches, selectReasoningSlider, selectModel, workModelMatches, workSelectionMatches, workSelectionLabel, selectWorkModel, routeDraft, onDraftChange, readText, show, inWorkMode, WORK_TARGETS, state };\n})();");
+const instrumented = source.replace(/\n\}\)\(\);\s*$/, "\n  globalThis.__jevTest = { routeDraft, routingFailure, onDraftChange, readText, show, inWorkMode, WORK_TARGETS, state };\n})();");
 assert.notEqual(instrumented, source, "content script test hook must be inserted");
+
+test("setup failures name the recovery rather than pretending the API failed", () => {
+  const context = { document: {addEventListener() {}}, setInterval() {} };
+  loadContent(context);
+  for (const [code, text] of [
+    ["routing_consent", "同意"], ["routing_key_missing", "TypeSafe API Key"],
+    ["routing_service_unconfigured", "尚未開通"], ["routing_membership_missing", "會員憑證"]
+  ]) {
+    const result = context.__jevTest.routingFailure(code);
+    assert.equal(result.kind, "warning");
+    assert.ok(result.message.includes(text));
+  }
+  assert.match(context.__jevTest.routingFailure("routing_auth").message, /驗證失敗/);
+  assert.match(context.__jevTest.routingFailure("routing_network").message, /無法連線/);
+  assert.equal(context.__jevTest.routingFailure("routing_timeout").kind, "error");
+});
 
 function loadContent(context, language = "zh-TW") {
   context.chrome ??= {};
@@ -15,316 +31,6 @@ function loadContent(context, language = "zh-TW") {
   runInNewContext(i18nSource, context);
   runInNewContext(instrumented, context);
 }
-
-function fixture(initialEffort = "medium", closeMenuOnKey = true) {
-  let menuOpen = true;
-  const button = {
-    innerText: initialEffort === "none" ? "Instant" : "Medium",
-    getAttribute(name) {
-      if (name === "data-selected-reasoning-effort") return initialEffort;
-      if (name === "aria-expanded") return String(menuOpen);
-      if (name === "aria-label") return "選取 ChatGPT 模型";
-      return null;
-    },
-    getBoundingClientRect: () => ({ width: 100, height: 30 }),
-    click() { menuOpen = false; }
-  };
-  const slider = {
-    getAttribute(name) {
-      return { "aria-valuemin": "0", "aria-valuemax": "2", "aria-valuenow": "1" }[name] ?? null;
-    }
-  };
-  const control = {
-    getAttribute: () => null,
-    getBoundingClientRect: () => ({ width: 100, height: 30 }),
-    closest: () => null,
-    querySelector: () => slider,
-    focus() {},
-    dispatchEvent(event) {
-      assert.equal(event.key, "ArrowLeft");
-      initialEffort = "none";
-      button.innerText = "Instant";
-      if (closeMenuOnKey) menuOpen = false;
-    }
-  };
-  const document = {
-    addEventListener() {},
-    querySelectorAll(selector) {
-      if (selector === '[data-composer-navigation-target="reasoning"]') return [button];
-      if (selector === '[data-reasoning-slider="true"]') return menuOpen ? [control] : [];
-      return [];
-    }
-  };
-  const context = { document, getComputedStyle: () => ({ visibility: "visible" }),
-    setInterval() {}, setTimeout(callback) { callback(); }, clearTimeout() {},
-    KeyboardEvent: class { constructor(_type, options) { this.key = options.key; } } };
-  loadContent(context);
-  return { button, api: context.__jevTest };
-}
-
-test("Instant is recognized even when ChatGPT calls its reasoning effort none", () => {
-  const { button, api } = fixture("none");
-  assert.equal(api.selectedLabelMatches(button, ["Instant"]), true);
-});
-
-test("a slider change is successful when ChatGPT closes the menu immediately", async () => {
-  const { button, api } = fixture("medium", true);
-  assert.equal(await api.selectReasoningSlider("instant"), "Instant");
-  assert.equal(api.selectedLabelMatches(button, ["Instant"]), true);
-});
-
-for (const userNavigatesAway of [false, true]) {
-  test(`automatic switch ${userNavigatesAway ? "respects user navigation" : "restores draft focus and caret"}`, async () => {
-    const handlers = {};
-    let menuOpen = false;
-    let model = "Medium";
-    class Textarea {
-      value = "A draft for routing";
-      isConnected = true;
-      selectionStart = 7;
-      selectionEnd = 7;
-      selectionDirection = "none";
-      contains() { return false; }
-      focus(options) { assert.equal(options.preventScroll, true); document.activeElement = this; }
-      setSelectionRange(start, end, direction) { this.selectionStart = start; this.selectionEnd = end; this.selectionDirection = direction; }
-    }
-    const editor = new Textarea();
-    const visible = () => ({ width: 100, height: 30 });
-    const button = {
-      get innerText() { return model; },
-      getAttribute(name) { return name === "aria-expanded" ? String(menuOpen) : null; },
-      getBoundingClientRect: visible,
-      click() { menuOpen = !menuOpen; document.activeElement = this; }
-    };
-    const item = {
-      innerText: "Instant", getAttribute: () => null, getBoundingClientRect: visible,
-      closest: () => null,
-      click() {
-        document.activeElement = this;
-        if (userNavigatesAway) handlers.pointerdown({ isTrusted: true, target: this });
-        model = "Instant";
-        menuOpen = false;
-      }
-    };
-    const document = {
-      activeElement: editor,
-      addEventListener(type, handler) { handlers[type] = handler; },
-      querySelectorAll(selector) {
-        if (selector === '[data-composer-navigation-target="reasoning"]') return [button];
-        if (selector.startsWith("[role='menuitem']")) return menuOpen ? [item] : [];
-        return [];
-      }
-    };
-    const context = { document, HTMLTextAreaElement: Textarea,
-      getComputedStyle: () => ({ visibility: "visible" }),
-      setInterval() {}, setTimeout(callback) { callback(); }, clearTimeout() {} };
-    loadContent(context);
-    const { state, selectModel } = context.__jevTest;
-    state.composer = editor;
-    state.text = editor.value;
-    assert.equal(await selectModel("instant", state.text, state.version), "Instant");
-    assert.equal(document.activeElement, userNavigatesAway ? item : editor);
-    assert.equal(editor.selectionStart, 7);
-  });
-}
-
-test("Work success requires both the model and the requested reasoning effort", () => {
-  const { api } = fixture();
-  const button = {
-    innerText: "GPT-6.1 Sol\n輕度\n無\n中\n極高",
-    getAttribute(name) { return name === "data-selected-reasoning-effort" ? "low" : null; }
-  };
-  assert.equal(api.workSelectionMatches(button, api.WORK_TARGETS.sol_low), true);
-  assert.equal(api.workSelectionMatches(button, api.WORK_TARGETS.sol_medium), false);
-  assert.equal(api.workModelMatches(button, api.WORK_TARGETS.sol_medium), true);
-  assert.equal(api.workSelectionMatches(button, api.WORK_TARGETS.astra_low), false);
-  assert.equal(api.workSelectionLabel(button, api.WORK_TARGETS.sol_low), "GPT-6.1 Sol · 輕度");
-});
-
-test("Work can use an available Sol version but reports the actual model", () => {
-  const { api } = fixture();
-  const button = {
-    innerText: "GPT-6 Sol\n輕度",
-    getAttribute(name) { return name === "data-selected-reasoning-effort" ? "low" : null; }
-  };
-  assert.equal(api.workSelectionMatches(button, api.WORK_TARGETS.sol_low), true);
-  assert.equal(api.workSelectionLabel(button, api.WORK_TARGETS.sol_low), "GPT-6 Sol · 輕度");
-});
-
-test("Work Luna waits for the model label and commits a reasoning effort", async () => {
-  let menuOpen = false;
-  let view = "simple";
-  let model = "GPT-6.1 Sol";
-  let effort = "medium";
-  let position = 1;
-  let committed = false;
-  const visible = () => ({ width: 100, height: 30 });
-  const trigger = {
-    get innerText() { return committed ? `${model}\n${effort}` : "選取推理強度"; },
-    getAttribute(name) {
-      if (name === "data-selected-reasoning-effort") return effort;
-      if (name === "aria-expanded") return String(menuOpen);
-      return null;
-    },
-    getBoundingClientRect: visible,
-    click() { menuOpen = !menuOpen; }
-  };
-  const toggle = {
-    getBoundingClientRect: visible, getAttribute: () => null, closest: () => null,
-    click() { view = "advanced"; }
-  };
-  const item = {
-    innerText: "GPT-6 Luna",
-    getBoundingClientRect: visible, getAttribute: () => null, closest: () => null,
-    click() { model = "GPT-6 Luna"; effort = "low"; position = 0; view = "simple"; }
-  };
-  const slider = {
-    getAttribute(name) {
-      return { "aria-valuemin": "0", "aria-valuemax": "4", "aria-valuenow": String(position) }[name] ?? null;
-    }
-  };
-  const control = {
-    getBoundingClientRect: visible, getAttribute: () => null, closest: () => null,
-    querySelector: () => slider, focus() {},
-    dispatchEvent(event) {
-      if (event.type !== "keydown") return;
-      position += event.key === "ArrowRight" ? 1 : -1;
-      effort = position === 0 ? "low" : "medium";
-      committed = true;
-    }
-  };
-  const document = {
-    addEventListener() {},
-    querySelectorAll(selector) {
-      if (selector === '[data-composer-navigation-target="reasoning"]') return [trigger];
-      if (selector === '[role="menu"] [role="menuitemradio"]') return menuOpen && view === "advanced" ? [item] : [];
-      if (selector === '[data-model-picker-view-toggle="true"]') return menuOpen && view === "simple" ? [toggle] : [];
-      if (selector === '[data-reasoning-slider="true"]') return menuOpen && view === "simple" ? [control] : [];
-      return [];
-    }
-  };
-  const context = {
-    document, getComputedStyle: () => ({ visibility: "visible" }),
-    setInterval() {}, setTimeout(callback) { callback(); }, clearTimeout() {},
-    KeyboardEvent: class { constructor(type, options) { this.type = type; this.key = options.key; } }
-  };
-  loadContent(context);
-  const { state, selectWorkModel } = context.__jevTest;
-  state.text = "幫我查白馬雪場雪票";
-  state.surface = "work";
-  assert.equal(await selectWorkModel("luna", state.text, state.version), "GPT-6 Luna · 輕度");
-  assert.equal(effort, "low");
-  assert.equal(menuOpen, false);
-});
-
-test("Work selects a model, adjusts effort, and verifies both before success", async () => {
-  let menuOpen = false;
-  let view = "simple";
-  let model = "GPT-6 Luna";
-  let effort = "low";
-  let position = 0;
-  const visible = () => ({ width: 100, height: 30 });
-  const trigger = {
-    get innerText() { return `${model}\n輕度`; },
-    getAttribute(name) {
-      if (name === "data-selected-reasoning-effort") return effort;
-      if (name === "aria-expanded") return String(menuOpen);
-      return null;
-    },
-    getBoundingClientRect: visible,
-    click() { menuOpen = !menuOpen; }
-  };
-  const toggle = {
-    getBoundingClientRect: visible, getAttribute: () => null, closest: () => null,
-    click() { view = "advanced"; }
-  };
-  const item = {
-    innerText: "GPT-6.1 Sol",
-    getBoundingClientRect: visible, getAttribute: () => null, closest: () => null,
-    click() { model = "GPT-6.1 Sol"; effort = "low"; view = "simple"; }
-  };
-  const slider = {
-    getAttribute(name) {
-      return { "aria-valuemin": "0", "aria-valuemax": "4", "aria-valuenow": String(position) }[name] ?? null;
-    },
-    dispatchEvent(event) {
-      if (event.type !== "keydown") return;
-      assert.equal(event.key, "ArrowRight");
-      assert.equal(event.keyCode, 39);
-      position = 1;
-      effort = "medium";
-    }
-  };
-  const control = {
-    getBoundingClientRect: visible, getAttribute: () => null, closest: () => null,
-    querySelector: () => slider, focus() {},
-    dispatchEvent(event) {
-      assert.equal(event.key, "ArrowRight");
-    }
-  };
-  const document = {
-    addEventListener() {},
-    querySelectorAll(selector) {
-      if (selector === '[data-composer-navigation-target="reasoning"]') return [trigger];
-      if (selector === '[role="menu"] [role="menuitemradio"]') return menuOpen && view === "advanced" ? [item] : [];
-      if (selector === '[data-model-picker-view-toggle="true"]') return menuOpen && view === "simple" ? [toggle] : [];
-      if (selector === '[data-reasoning-slider="true"]') return menuOpen && view === "simple" ? [control] : [];
-      return [];
-    }
-  };
-  const context = {
-    document, getComputedStyle: () => ({ visibility: "visible" }),
-    setInterval() {}, setTimeout(callback) { callback(); }, clearTimeout() {},
-    KeyboardEvent: class { constructor(type, options) { this.type = type; this.key = options.key; this.keyCode = options.keyCode; } }
-  };
-  loadContent(context);
-  const { state, selectWorkModel } = context.__jevTest;
-  state.text = "解釋並修正程式碼";
-  state.surface = "work";
-  assert.equal(await selectWorkModel("sol_medium", state.text, state.version), "GPT-6.1 Sol · 中度");
-  assert.equal(menuOpen, false);
-  assert.equal(effort, "medium");
-});
-
-test("Work reports a partial switch when the model changed but effort did not", async () => {
-  const visible = () => ({ width: 100, height: 30 });
-  let menuOpen = false;
-  const trigger = {
-    innerText: "GPT-6 Astra\n輕度",
-    getBoundingClientRect: visible,
-    getAttribute(name) {
-      if (name === "data-selected-reasoning-effort") return "low";
-      if (name === "aria-expanded") return String(menuOpen);
-      return null;
-    },
-    click() { menuOpen = !menuOpen; }
-  };
-  const element = () => ({ children: [], style: {}, dataset: {}, isConnected: false, offsetHeight: 70,
-    setAttribute() {}, addEventListener() {},
-    append(...children) { this.children.push(...children); }, replaceChildren() { this.children = []; } });
-  const document = {
-    addEventListener() {}, createElement: element,
-    body: { appendChild(node) { node.isConnected = true; } },
-    querySelectorAll(selector) { return selector === '[data-composer-navigation-target="reasoning"]' ? [trigger] : []; }
-  };
-  const context = {
-    document, window: { innerWidth: 500 }, getComputedStyle: () => ({ visibility: "visible" }),
-    setInterval() {}, setTimeout(callback) { callback(); }, clearTimeout() {},
-    chrome: { runtime: { sendMessage(_message, callback) {
-      callback({ ok: true, result: { mode: "astra_medium", topChoices: [{ mode: "astra_medium", probability: 0.81 }] } });
-    } } }
-  };
-  loadContent(context);
-  const { state, routeDraft } = context.__jevTest;
-  state.composer = { closest: () => ({ getBoundingClientRect: () => ({ top: 200, right: 450 }) }) };
-  state.text = "請設計多人協作筆記系統";
-  state.surface = "work";
-  assert.equal(await routeDraft(state.text, state.version), false);
-  assert.equal(state.failedText, state.text);
-  assert.equal(state.partialText, state.text);
-  assert.equal(state.badge.dataset.kind, "warning");
-  assert.equal(state.badge.children[0].children[1].textContent, "JEV · 模型已切換，強度請手動調整");
-});
 
 test("low-confidence recommendations leave the selected model untouched", async () => {
   let clicked = false;
@@ -388,14 +94,14 @@ test("Alert is right-aligned and renders only the returned top choices", () => {
   const { show, state } = context.__jevTest;
   state.composer = { closest: () => ({ getBoundingClientRect: () => ({ top: 200, right: 450 }) }) };
   state.text = "請分析";
-  show(context.JevI18n.t("switched", { model: "High" }), "success", [
+  show(context.JevI18n.t("recommendation", { model: "High" }), "success", [
     { mode: "high", probability: 0.7 }, { mode: "medium", probability: 0.3 }
   ]);
   assert.equal(state.badge.dataset.kind, "success");
   assert.equal(state.badge.style.right, "50px");
   assert.equal(state.badge.style.top, "112px");
   assert.equal(state.badge.children.length, 2, "status and probabilities share a compact alert");
-  assert.equal(state.badge.children[0].children[1].textContent, "JEV · 已切換");
+  assert.equal(state.badge.children[0].children[1].textContent, "JEV · 建議使用 High");
   assert.equal(state.badge.children[1].children.length, 2);
   assert.equal(state.badge.children[1].children[0].children[1].textContent, "70%");
 });
@@ -406,6 +112,11 @@ test("the 200px alert wraps long status text instead of truncating it", () => {
   assert.ok(statusRule);
   assert.match(statusRule, /white-space:\s*normal/);
   assert.doesNotMatch(statusRule, /text-overflow:\s*ellipsis/);
+  assert.match(source, /node\.setAttribute\("role", "status"\)/);
+  assert.match(source, /node\.setAttribute\("aria-atomic", "true"\)/);
+  assert.match(source, /name\.title = name\.textContent/);
+  assert.match(cssSource, /\.jev-alert-action:focus-visible/);
+  assert.match(cssSource, /\.jev-probability strong\s*\{[^}]*flex:\s*none/);
 });
 
 test("Alert follows the browser UI language", () => {
@@ -423,9 +134,9 @@ test("Alert follows the browser UI language", () => {
   const { show, state } = context.__jevTest;
   state.composer = { closest: () => ({ getBoundingClientRect: () => ({ top: 200, right: 450 }) }) };
   state.text = "Hello";
-  show(context.JevI18n.t("switched", { model: "Instant" }), "success", []);
+  show(context.JevI18n.t("recommendation", { model: "Instant" }), "success", []);
   assert.equal(state.badge.lang, "en");
-  assert.equal(state.badge.children[0].children[1].textContent, "JEV · Switched");
+  assert.equal(state.badge.children[0].children[1].textContent, "JEV · Suggested: Instant");
   assert.equal(state.badge.children[0].children[2].textContent, "Settings");
 });
 
@@ -450,7 +161,7 @@ test("switching from Chat to Work reroutes a preserved draft after manual choice
   const editor = { innerText: "幫我查白馬雪場雪票", closest: () => ({ getBoundingClientRect: () => ({ top: 200, right: 450 }) }) };
   const group = {
     querySelectorAll: () => [
-      { getAttribute: () => "false" }, { getAttribute: () => "true" }
+      { innerText: "對話", getAttribute: () => "false" }, { innerText: "工作", getAttribute: () => "true" }
     ]
   };
   const element = () => ({ children: [], style: {}, dataset: {}, isConnected: false, offsetHeight: 50,
@@ -468,14 +179,32 @@ test("switching from Chat to Work reroutes a preserved draft after manual choice
   state.composer = editor;
   state.text = editor.innerText;
   state.surface = "chat";
-  state.manualOverride = true;
   state.appliedText = editor.innerText;
   onDraftChange();
   assert.equal(state.surface, "work");
-  assert.equal(state.manualOverride, false);
   assert.equal(state.appliedText, "");
   assert.equal(state.badge.dataset.kind, "loading");
   assert.equal(scheduled, true);
+});
+
+test("existing Work conversation is identified from its composer model without a mode toggle", () => {
+  const trigger = { innerText: "GPT-6.1 Sol 輕度", getAttribute: () => null,
+    getBoundingClientRect: () => ({ width: 120, height: 30 }) };
+  const context = {
+    document: { addEventListener() {}, querySelectorAll(selector) { return selector === '[data-composer-navigation-target="reasoning"]' ? [trigger] : []; } },
+    getComputedStyle: () => ({ visibility: "visible" }), setInterval() {}
+  };
+  loadContent(context);
+  assert.equal(context.__jevTest.inWorkMode(), true);
+});
+
+test("unrelated two-button groups cannot misclassify Chat as Work", () => {
+  const group = { querySelectorAll: () => [
+    { innerText: "List", getAttribute: () => "false" }, { innerText: "Grid", getAttribute: () => "true" }
+  ] };
+  const context = { document: { addEventListener() {}, querySelectorAll(selector) { return selector === '[role="group"]' ? [group] : []; } }, setInterval() {} };
+  loadContent(context);
+  assert.equal(context.__jevTest.inWorkMode(), false);
 });
 
 test("IME candidate Enter cannot send while composing or just after commit", () => {
@@ -521,6 +250,42 @@ test("IME candidate Enter cannot send while composing or just after commit", () 
   now += 100;
   assert.equal(enter().prevented, true);
   now += 400;
-  state.appliedText = editor.innerText;
-  assert.equal(enter().prevented, false, "a later deliberate Enter still works");
+  assert.equal(state.appliedText, "", "recommendation is still pending");
+  assert.equal(enter().prevented, false, "a deliberate Enter never waits for a recommendation");
 });
+
+
+test("recommendation-only script cannot operate model menus, focus or sending", () => {
+  assert.doesNotMatch(source, /\.click\(|\.focus\(|dispatchEvent\(|new KeyboardEvent|guardSend|selectModel|selectWorkModel/);
+});
+
+for (const surface of ["chat", "work"]) {
+  test(`high-confidence ${surface} recommendation never changes the selected model`, async () => {
+    let clicked = 0;
+    const events = [];
+    const trigger = { innerText: surface === "work" ? "GPT-6 Luna" : "Instant",
+      getBoundingClientRect: () => ({ width: 100, height: 30 }), getAttribute: () => null,
+      click() { clicked++; } };
+    const element = () => ({ children: [], style: {}, dataset: {}, isConnected: false, offsetHeight: 60,
+      setAttribute() {}, addEventListener() {}, append(...nodes) { this.children.push(...nodes); }, replaceChildren() { this.children = []; } });
+    const context = {
+      document: { addEventListener() {}, createElement: element, body: { appendChild(node) { node.isConnected = true; } },
+        querySelectorAll(selector) { return selector === '[data-composer-navigation-target="reasoning"]' ? [trigger] : []; } },
+      window: { innerWidth: 500 }, getComputedStyle: () => ({ visibility: "visible" }),
+      setInterval() {}, setTimeout() {}, clearTimeout() {},
+      chrome: { runtime: { sendMessage(message, callback) {
+        if (message.type === "JEV_DIAGNOSTIC") { events.push(message.event); callback({ok: true}); return; }
+        callback({ok: true, result: {mode: surface === "work" ? "astra_medium" : "high", confidence: .9, topChoices: []}});
+      } } }
+    };
+    loadContent(context);
+    const {state, routeDraft} = context.__jevTest;
+    state.composer = {closest: () => ({getBoundingClientRect: () => ({top: 200, right: 450})})};
+    state.text = "synthetic recommendation fixture"; state.surface = surface;
+    assert.equal(await routeDraft(state.text), true);
+    assert.equal(clicked, 0);
+    assert.equal(state.badge.dataset.kind, "success");
+    assert.equal(events[0].outcome, "suggested");
+    assert.doesNotMatch(JSON.stringify(events), /synthetic recommendation fixture/);
+  });
+}

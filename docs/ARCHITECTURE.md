@@ -1,3 +1,5 @@
+> 歷史文件：描述 0.2 自動切換／Stripe 原型。0.3 已改只推薦與 Skool；目前部署以 [CLOUDFLARE-SKOOL.md](CLOUDFLARE-SKOOL.md) 為準，勿執行本文件的旧付款部署流程。
+
 # 架構與維護指南
 
 此文件描述目前程式碼的實際行為，供維護 Chrome 擴充功能與可選訂閱服務的人使用。第一次接觸專案，先看 [README](../README.md) 的快速開始；部署步驟在 [SETUP.md](SETUP.md)。

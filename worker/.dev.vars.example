@@ -1,3 +1,4 @@
+# Local development only. Real values must never be committed.
 TYPESAFE_API_KEY=replace_me
-STRIPE_SECRET_KEY=sk_test_replace_me
-STRIPE_WEBHOOK_SECRET=whsec_replace_me
+ADMIN_SYNC_SECRET=replace_with_random_secret_at_least_32_characters
+MEMBER_HASH_SECRET=replace_with_different_random_secret_at_least_32_characters

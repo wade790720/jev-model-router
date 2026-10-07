@@ -1,4 +1,8 @@
 {
-  "productName": { "message": "Smart ChatGPT" },
-  "productDescription": { "message": "Auto-picks ChatGPT models: efficient for simple prompts, advanced for complex ones. Powered by TypeSafe AI Jev." }
+  "productName": {
+    "message": "Smart ChatGPT"
+  },
+  "productDescription": {
+    "message": "Recommends suitable ChatGPT models from text drafts using TypeSafe AI Jev. You choose and switch the model yourself."
+  }
 }

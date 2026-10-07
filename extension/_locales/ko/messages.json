@@ -1,4 +1,8 @@
 {
-  "productName": { "message": "Smart ChatGPT" },
-  "productDescription": { "message": "Auto-picks ChatGPT models: efficient for simple prompts, advanced for complex ones. Powered by TypeSafe AI Jev." }
+  "productName": {
+    "message": "Smart ChatGPT"
+  },
+  "productDescription": {
+    "message": "TypeSafe AI Jev로 입력에 적합한 ChatGPT 모델을 추천합니다. 모델 전환은 사용자가 직접 합니다."
+  }
 }

@@ -1,3 +1,5 @@
+> 歷史文件：描述 0.2 自動切換／Stripe 原型。0.3 已改只推薦與 Skool；目前部署以 [CLOUDFLARE-SKOOL.md](CLOUDFLARE-SKOOL.md) 為準，勿執行本文件的旧付款部署流程。
+
 # 安裝與部署
 
 ## 1. 先試自備 API key（不需 Cloudflare／Stripe）

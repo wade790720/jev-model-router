@@ -61,9 +61,12 @@
   border-color: color-mix(in srgb, var(--jev-border) 45%, #dc2626 55%);
 }
 #jev-model-router-badge .jev-alert-action {
+  flex: none;
   margin-left: auto;
   border: 0;
-  padding: 2px 3px;
+  min-height: 24px;
+  padding: 3px 4px;
+  border-radius: 4px;
   background: transparent;
   color: var(--jev-muted);
   font: inherit;
@@ -71,6 +74,8 @@
   cursor: pointer;
 }
 #jev-model-router-badge .jev-alert-action:hover { color: var(--jev-text); text-decoration: underline; }
+#jev-model-router-badge .jev-alert-action:focus-visible { outline: 2px solid var(--jev-text); outline-offset: 2px; }
+#jev-model-router-badge .jev-alert-action:active { background: color-mix(in srgb, var(--jev-text) 10%, transparent); }
 #jev-model-router-badge .jev-probabilities {
   display: grid;
   gap: 1px;
@@ -89,4 +94,8 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-#jev-model-router-badge .jev-probability strong { font-weight: 600; }
+#jev-model-router-badge .jev-probability strong { flex: none; font-weight: 600; }
+@media (forced-colors: active) {
+  #jev-model-router-badge { border-color: CanvasText; }
+  #jev-model-router-badge .jev-status-light { border: 1px solid CanvasText; }
+}

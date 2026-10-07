@@ -1,4 +1,8 @@
 {
-  "productName": { "message": "ChatGPT 智能选模型" },
-  "productDescription": { "message": "根据输入内容，推荐合适的 ChatGPT 模型并自动切换；简单任务选高效率模型，复杂任务选高阶模型，由 TypeSafe AI Jev 提供判断机制" }
+  "productName": {
+    "message": "ChatGPT 智能选模型"
+  },
+  "productDescription": {
+    "message": "根据输入内容推荐适合的 ChatGPT 模型，由 TypeSafe AI Jev 提供判断；仅提供提示，模型由你自行切换。"
+  }
 }

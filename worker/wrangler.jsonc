@@ -1,14 +1,17 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "jev-model-router",
-  "main": "src/index.js",
+  "main": "src/skool.js",
   "compatibility_date": "2026-10-01",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [
+    { "pattern": "router.tekuei.com", "custom_domain": true }
+  ],
   "vars": {
-    "STRIPE_PRICE_ID": "REPLACE_WITH_USD_5_MONTHLY_PRICE_ID",
     "MAX_PROMPT_CHARS": "20000",
     "MAX_REQUESTS_PER_MINUTE": "20",
     "MAX_REQUESTS_PER_DAY": "3000",
-    "MAX_CHECKOUTS_PER_IP_10_MIN": "5",
     "MAX_INPUT_TOKENS_PER_DAY": "2000000",
     "GLOBAL_INPUT_TOKENS_PER_DAY": "100000000"
   },
@@ -16,7 +19,8 @@
     {
       "binding": "DB",
       "database_name": "jev-model-router",
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID"
+      "database_id": "51df88f5-5ee6-4ad3-a475-0ff56d44114d",
+      "migrations_dir": "migrations"
     }
   ],
   "triggers": { "crons": ["0 3 * * *"] }
