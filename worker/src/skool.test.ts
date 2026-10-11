@@ -40,6 +40,8 @@ afterEach(() => vi.restoreAllMocks());
 test("Skool entry disables legacy payments and does not pretend sign-in is available", async () => {
   const health = await worker.fetch(new Request("https://router.example/api/health"), {});
   expect((await health.json() as { signInReady: boolean }).signInReady).toBe(false);
+  const ready = await worker.fetch(new Request("https://router.example/api/health"), setup(database()));
+  expect((await ready.json() as { signInReady: boolean }).signInReady).toBe(true);
   for (const path of ["/api/checkout", "/api/portal", "/api/stripe-webhook", "/login"]) {
     expect((await worker.fetch(new Request("https://router.example" + path, { method: "POST" }), {})).status).toBe(404);
   }

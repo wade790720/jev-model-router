@@ -53,7 +53,10 @@ export default {
   async fetch(request: Request, env: Env) {
     const path = new URL(request.url).pathname;
     try {
-      if (path === "/api/health" && request.method === "GET") return json({ ok: true, service: "smart-chatgpt", membership: "skool", signInReady: false });
+      if (path === "/api/health" && request.method === "GET") {
+        // Sign-in (/api/session) works only once the database and the member hash secret are set.
+        return json({ ok: true, service: "smart-chatgpt", membership: "skool", signInReady: !!env.DB && (env.MEMBER_HASH_SECRET?.length ?? 0) >= 32 });
+      }
       if (path === "/api/route" && request.method === "POST") return await route(request, env);
       if (path === "/api/admin/members" && request.method === "POST") return await updateMember(request, env);
       if (path === "/api/session" && request.method === "POST") return await createSession(request, env);
