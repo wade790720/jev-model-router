@@ -6,7 +6,7 @@
   "description": "__MSG_productDescription__",
   "minimum_chrome_version": "116",
   "permissions": ["storage", "alarms", "cookies"],
-  "host_permissions": ["https://chatgpt.com/*", "https://api.typesafe.ai/*", "http://127.0.0.1/*", "https://www.skool.com/*", "https://router.tekuei.com/*"],
+  "host_permissions": ["https://chatgpt.com/*", "https://api.typesafe.ai/*", "http://127.0.0.1/*", "https://*.skool.com/*", "https://router.tekuei.com/*"],
   "background": {
     "service_worker": "background.js",
     "type": "module"

@@ -35,7 +35,7 @@ test("setup failures name the recovery rather than pretending the API failed", (
   const { routingFailure } = setup();
   for (const [code, words] of [
     ["routing_consent", "同意"], ["routing_key_missing", "TypeSafe API Key"],
-    ["routing_service_unconfigured", "尚未開通"], ["routing_membership_missing", "會員憑證"]
+    ["routing_service_unconfigured", "尚未開通"], ["routing_membership_missing", "登入 Skool"]
   ]) {
     const result = routingFailure(code);
     expect(result.kind).toBe("warning");

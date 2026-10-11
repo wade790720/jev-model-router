@@ -38,6 +38,10 @@ test("toolbar popup uses an intrinsic width while settings remain responsive", (
 test("no permission to reach arbitrary sites now that the hosted service is gone", () => {
   expect(manifest.host_permissions).toContain("http://127.0.0.1/*");
   expect(manifest.optional_host_permissions).toBeUndefined();
+  // Skool keeps its sign-in cookie on .skool.com (shared with api2.skool.com): with only www.skool.com,
+  // chrome.cookies filters it out and the hosted sign-in sees a signed-out browser.
+  expect(manifest.host_permissions).toContain("https://*.skool.com/*");
+  expect(manifest.permissions).toContain("cookies");
 });
 
 test("settings bundle the shared brand tokens and status palette locally and never leak them into ChatGPT", () => {
