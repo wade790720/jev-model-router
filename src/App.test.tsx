@@ -44,12 +44,13 @@ test("local diagnostic permission is required but not duplicated as optional", (
   expect(manifest.optional_host_permissions).not.toContain("http://127.0.0.1/*");
 });
 
-test("settings bundle the Sai Radix palette locally and never leak it into ChatGPT", () => {
-  for (const scale of ["violet", "mauve", "sand", "green", "amber", "red"]) {
+test("settings bundle the shared brand tokens and status palette locally and never leak them into ChatGPT", () => {
+  expect(css).toContain(`@import "./brand.css";`);
+  expect(read("src/brand.css")).toMatch(/--primary: #6e56cf;/);
+  for (const scale of ["green", "amber", "red"]) {
     expect(css).toContain(`@import "@radix-ui/colors/${scale}.css";`);
     expect(css).toContain(`@import "@radix-ui/colors/${scale}-dark.css";`);
   }
-  expect(css).toMatch(/--primary: var\(--violet-9\)/);
   expect(read("src/components/ui/alert.tsx")).toMatch(/text-\(--red-12\)/);
   expect(read("options.html") + read("popup.html")).not.toMatch(/(?:src|href)="https?:/);
   expect(read("public/RADIX-LICENSE.txt")).toMatch(/Copyright \(c\) 2021 Radix/);
