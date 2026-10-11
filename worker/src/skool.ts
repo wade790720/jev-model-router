@@ -57,7 +57,8 @@ export default {
       if (path === "/api/admin/members" && request.method === "POST") return await updateMember(request, env);
       if (path === "/api/errors" && request.method === "POST") return await intakeErrors(request, env);
       if (path.startsWith("/api/admin/errors")) {
-        if (!await authorized(request, env.ADMIN_SYNC_SECRET)) return json({ error: "Unauthorized" }, 401);
+        // Own secret, not ADMIN_SYNC_SECRET: the daily AI routine holds it, and it can only read errors.
+        if (!await authorized(request, env.ERRORS_ADMIN_SECRET)) return json({ error: "Unauthorized" }, 401);
         if (path === "/api/admin/errors" && request.method === "GET") return await listErrors(env, new URL(request.url).searchParams.get("status"));
         if (path === "/api/admin/errors/ack" && request.method === "POST") return await ackErrors(request, env);
       }

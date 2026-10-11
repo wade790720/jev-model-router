@@ -19,7 +19,7 @@ function database() {
   return { sql, prepare, batch: async (statements: { run(): Promise<unknown> }[]) => { for (const s of statements) await s.run(); } };
 }
 const secret = "test-admin-secret-" + "a".repeat(32);
-const setup = () => { const db = database(); return { db, env: { DB: db as unknown as D1Database, ADMIN_SYNC_SECRET: secret } as Env }; };
+const setup = () => { const db = database(); return { db, env: { DB: db as unknown as D1Database, ERRORS_ADMIN_SECRET: secret, ADMIN_SYNC_SECRET: "member-admin-" + "d".repeat(32) } as Env }; };
 const report = (env: Env, body: unknown) => worker.fetch(new Request("https://router.example/api/errors", {
   method: "POST", headers: { "content-type": "text/plain" }, body: typeof body === "string" ? body : JSON.stringify(body)
 }), env);

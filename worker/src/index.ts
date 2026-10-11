@@ -6,6 +6,7 @@ export interface Env {
   TYPESAFE_API_KEY?: string;
   MEMBERSHIP_PROVIDER?: string;
   ADMIN_SYNC_SECRET?: string;
+  ERRORS_ADMIN_SECRET?: string;
   MEMBER_HASH_SECRET?: string;
   STRIPE_SECRET_KEY?: string;
   STRIPE_PRICE_ID?: string;
