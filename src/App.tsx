@@ -60,7 +60,7 @@ export function App() {
         <Note>{t("hostedHelp")}</Note>
         <div className="mt-3.5 grid gap-2">
           <Button type="button" {...busyProps("login")} onClick={() => run("login", login)}>{t("memberLogin")}</Button>
-          <Button type="button" variant="secondary" {...busyProps("subscribe")} onClick={() => run("subscribe", () => openSkool())}>{t("skoolSubscription")}</Button>
+          <Button type="button" variant="outline" {...busyProps("subscribe")} onClick={() => run("subscribe", () => openSkool())}>{t("skoolSubscription")}</Button>
         </div>
         <Note>{t("subscriptionNote")}</Note>
         <details className={section}>
@@ -118,7 +118,7 @@ export function App() {
             {diagnostics.text}
           </p>
         )}
-        <Button type="button" variant="secondary" size="sm" id="exportDiagnostics" {...busyProps("export")}
+        <Button type="button" variant="outline" size="sm" id="exportDiagnostics" {...busyProps("export")}
           onClick={() => run("export", exportDiagnostics)}>{t("exportDiagnostics")}</Button>
       </details>
     </main>

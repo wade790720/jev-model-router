@@ -23,14 +23,14 @@ Shared brand pack for this maintainer lives outside this repository at `C:/Users
 - Toolbar popup: intrinsic 360px width and 20px padding, fixed by `data-view="popup"` on `popup.html`'s `<html>`, so it applies before any script runs. Never cap native popup width with `100vw`: Chrome derives the viewport from the content, creating a circular shrink loop. The full settings page keeps its responsive 360px viewport cap, up to 440px with 26px padding on wide screens.
 - Light/dark settings follow the system. Embedded notice follows the host's effective theme.
 - Settings palette: shared brand tokens v0.2.0 (Linear-style neutral grays, one violet accent). The accent is an interim cross-product value, not a finalized Sai identity or logo asset. Product names remain unchanged.
-- Primary accent: `#6e56cf` (Radix violet9). Hover mixes it with 12% black in both themes to keep white button text above 4.5:1. The S mark uses the shared `brand-mark` utility: a matte accent tile, a product placeholder.
+- Primary accent: `#6e56cf` (Radix violet9). The shared Button darkens it on hover (12% black) to keep white text above 4.5:1. The S mark uses the shared `brand-mark` utility: a matte accent tile, a product placeholder.
 - Canvas, surface and text come from the brand tokens. Passive borders are the brand hairline; form controls override `--input` with Radix mauve9 for a 3:1 boundary.
 - Success/error messages use green/red steps 3/7/12, with step 12 text chosen for stronger contrast on the tinted background. Color always accompanies text.
 - Focus rings and selected indicators use `--ring`: the accent in light mode, a lighter violet (`#baa7ff`) in dark mode, to keep contrast against dark surfaces.
 - `src/index.css` imports `./brand.css` and the Radix `green`/`amber`/`red` scales; Vite bundles them and the Inter font files; no CDN. They are loaded only by the settings pages, never injected into ChatGPT. Keep `public/RADIX-LICENSE.txt` in the shipped extension.
-- Product overrides stay limited to `--input`, `--raised` and `--primary-hover`. To change a shared color, edit `brand.css` in the shared pack, then copy it to every product.
+- Product overrides stay limited to `--input` and `--raised`. To change a shared color, edit `brand.css` in the shared pack, then copy it to every product.
 - Inter Variable (bundled), weights 400–600, no 700: 14px base, 17px product heading, 13px field labels, 12px help and status text.
-- Controls are 36px high (buttons and text inputs), small buttons 32px, same as the other brand products. Secondary buttons use the hairline border, not `--input`. Collapsible sections use a lucide chevron instead of the native marker.
+- Controls are 36px high (buttons and text inputs), small buttons 32px, same as the other brand products. Secondary actions use the outline Button (hairline border). `src/components/ui/button.tsx` and `input.tsx` are shared brand-module files, identical in all three products. Collapsible sections use a lucide chevron instead of the native marker.
 - Related controls use 8–12px gaps; distinct sections use 16–20px separation.
 - Hosted service is the fresh-install default. No connection-mode cards. Personal API key is an explicit checkbox inside advanced settings; existing personal settings are preserved.
 - Draft analysis runs by default once access is configured; no separate consent checkbox. Preserve the visible disclosure of text transmission. Member sign-in stays visibly unavailable until implemented; internal test credentials never masquerade as production login.
