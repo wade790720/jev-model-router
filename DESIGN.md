@@ -32,8 +32,8 @@ Shared brand pack for this maintainer lives outside this repository at `C:/Users
 - Inter Variable (bundled), weights 400–600, no 700: 14px base, 17px product heading, 13px field labels, 12px help and status text.
 - Controls are 36px high (buttons and text inputs), small buttons 32px, same as the other brand products. Secondary actions use the outline Button (hairline border). `src/components/ui/button.tsx` and `input.tsx` are shared brand-module files, identical in all three products. Collapsible sections use a lucide chevron instead of the native marker.
 - Related controls use 8–12px gaps; distinct sections use 16–20px separation.
-- The member's own TypeSafe API key is the only mode; the hosted service, test access and the diagnostics panel are gone. Skool membership is checked by `MembershipGate` before the page shows. The advanced settings section holds the key and is always open.
-- Draft analysis runs by default once the key is saved; no separate consent checkbox. Preserve the visible disclosure of text transmission.
+- The hosted service is the default and has no section of its own. Advanced settings (always open) hold an optional TypeSafe API key: a saved key routes drafts straight to TypeSafe, an empty one keeps the hosted service. No login, subscription or test-access UI; Skool membership is checked by `MembershipGate` before the page shows. The diagnostics panel is gone.
+- Draft analysis runs by default; no separate consent checkbox. Preserve the visible disclosure of text transmission.
 - Primary save action dominates. The shared `ReportProblem` controls (report button and the automatic error-report switch, on by default) sit small under it.
 - Embedded notice stays 200px maximum, right-aligned with the composer. Status text wraps; probability values never shrink. Truncated model names expose the full name through their title.
 

@@ -1,5 +1,4 @@
 // Settings page actions. Kept out of React so they can be tested without a DOM.
-import { t } from "./i18n";
 
 export interface SettingsForm { typeSafeKey: string }
 export type Status = { message: string; kind: "success" | "error" } | null;
@@ -9,11 +8,10 @@ export async function loadSettings(): Promise<SettingsForm> {
   return { typeSafeKey: String(values.typeSafeKey ?? "") };
 }
 
-// The member's own TypeSafe key is the only mode: the hosted service is gone.
-// connectionMode stays in storage so the content script and old installs read one value.
+// The hosted service is the default; a saved key switches routing to TypeSafe directly (route-draft.ts).
+// An empty key is valid and means "use the hosted service".
 export async function saveSettings(form: SettingsForm) {
-  if (!form.typeSafeKey.trim()) throw new Error(t("needTypeSafeKey"));
-  await chrome.storage.local.set({ connectionMode: "personal", typeSafeKey: form.typeSafeKey.trim() });
+  await chrome.storage.local.set({ typeSafeKey: form.typeSafeKey.trim() });
 }
 
 // Disables only the pending action, blocks repeat clicks on it and re-enables after success or failure.

@@ -39,7 +39,7 @@ export function App() {
 
       <section className="mt-[18px] border-t border-border pt-3.5" id="advanced" aria-labelledby="advancedHeading">
         <h2 className="mb-3 text-[13px] font-semibold" id="advancedHeading">{t("advancedSettings")}</h2>
-        <Label htmlFor="typeSafeKey">TypeSafe API key</Label>
+        <Label htmlFor="typeSafeKey">{t("usePersonalKey")}</Label>
         <Input id="typeSafeKey" type="password" autoComplete="off" spellCheck={false} placeholder="TypeSafe API key" aria-describedby="personalNote consentNote"
           value={form.typeSafeKey} onChange={event => setForm({ typeSafeKey: event.target.value })} />
         <Note id="personalNote">

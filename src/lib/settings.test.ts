@@ -47,15 +47,15 @@ test("failed actions expose recovery feedback and remain retryable", async () =>
   expect(ui.busy.has("save")).toBe(false);
 });
 
-test("loads the stored key and saves it as the only connection mode", async () => {
-  storage({ connectionMode: "subscription", typeSafeKey: " test-key ", activationCode: "old-token" });
+test("loads the stored key and saves it trimmed", async () => {
+  storage({ typeSafeKey: " test-key " });
   const form = await loadSettings();
   expect(form).toEqual({ typeSafeKey: " test-key " });
   await saveSettings(form);
-  expect(writes).toEqual([{ connectionMode: "personal", typeSafeKey: "test-key" }]);
+  expect(writes).toEqual([{ typeSafeKey: "test-key" }]);
 });
 
-test("saving without a key explains what is missing and writes nothing", async () => {
-  await expect(saveSettings(await loadSettings())).rejects.toThrow(/TypeSafe/);
-  expect(writes).toHaveLength(0);
+test("an empty key saves too: it means the hosted service, the default", async () => {
+  await saveSettings(await loadSettings());
+  expect(writes).toEqual([{ typeSafeKey: "" }]);
 });

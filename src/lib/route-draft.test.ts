@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from "vitest";
-import { routeDraft, TYPE_SAFE_URL, type CodedError } from "./route-draft";
+import { HOSTED_URL, routeDraft, TYPE_SAFE_URL, type CodedError } from "./route-draft";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -8,25 +8,33 @@ function background(settings: Record<string, unknown>) {
   vi.stubGlobal("chrome", { storage: { local: { get: async () => settings } } });
   vi.stubGlobal("fetch", async (url: string, init: RequestInit) => {
     requests.push({ url, init });
-    return Response.json({ answers: { response_mode: { type: "choice", choice: "instant", confidence: .9 } } });
+    return Response.json(url === TYPE_SAFE_URL
+      ? { answers: { response_mode: { type: "choice", choice: "instant", confidence: .9 } } }
+      : { mode: "instant", confidence: .9 });
   });
   return { route: (text: string) => routeDraft(text, "chat"), requests };
 }
+const auth = (init: RequestInit) => (init.headers as Record<string, string>).Authorization;
 
-test("the member's own key goes straight to TypeSafe, with or without the old consent flag", async () => {
+test("the hosted service is the default", async () => {
+  const api = background({ activationCode: "synthetic-token" });
+  expect((await api.route("Synthetic task")).mode).toBe("instant");
+  expect(api.requests[0].url).toBe(HOSTED_URL);
+  expect(auth(api.requests[0].init)).toBe("Bearer synthetic-token");
+});
+
+test("a key the member saved takes over and goes straight to TypeSafe", async () => {
   for (const flag of [undefined, false]) {
-    const api = background({ typeSafeKey: "synthetic-key", routingConsent: flag });
+    const api = background({ typeSafeKey: "synthetic-key", activationCode: "synthetic-token", routingConsent: flag });
     expect((await api.route("Synthetic task")).mode).toBe("instant");
     expect(api.requests).toHaveLength(1);
     expect(api.requests[0].url).toBe(TYPE_SAFE_URL);
-    expect((api.requests[0].init.headers as Record<string, string>).Authorization).toBe("Bearer synthetic-key");
+    expect(auth(api.requests[0].init)).toBe("Bearer synthetic-key");
   }
 });
 
-test("without a key nothing is sent, including for installs left on the removed hosted mode", async () => {
-  for (const settings of [{}, { connectionMode: "subscription", activationCode: "old-token", workerUrl: "https://router.example" }]) {
-    const api = background(settings);
-    await expect(api.route("Synthetic task")).rejects.toSatisfy((error: CodedError) => error.code === "routing_key_missing");
-    expect(api.requests).toHaveLength(0);
-  }
+test("with neither a key nor a hosted session nothing is sent", async () => {
+  const api = background({});
+  await expect(api.route("Synthetic task")).rejects.toSatisfy((error: CodedError) => error.code === "routing_membership_missing");
+  expect(api.requests).toHaveLength(0);
 });
