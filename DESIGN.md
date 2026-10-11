@@ -8,24 +8,25 @@ The popup, settings page and inline routing notice are **Operate** surfaces: use
 
 ## Source of truth
 
-- `extension/options.html`: settings tokens, layouts and controls.
-- `extension/content.css`: embedded notice, with ChatGPT theme-variable overrides.
-- `extension/i18n.js`: browser-language translations and factual copy.
-- `extension/options.js`: settings actions; preserve service permissions and privacy boundaries.
-- `extension/content.js`: recommendation-only state and draft/IME handling.
+- `src/index.css`: settings tokens (shadcn names mapped to the Radix palette) and page sizing.
+- `src/App.tsx` and `src/components/ui/`: settings layout and controls (shadcn/ui).
+- `public/content.css`: embedded notice, with ChatGPT theme-variable overrides.
+- `src/lib/i18n.ts`: browser-language translations and factual copy.
+- `src/lib/settings.ts`: settings actions; preserve service permissions and privacy boundaries.
+- `src/content/router.ts`: recommendation-only state and draft/IME handling.
 
 Shared brand pack for this maintainer lives outside this repository at `C:/Users/Wade_TPE/Documents/Codex/brand-guidelines`. Other checkouts must use the code and this file unless a corresponding brand pack is explicitly supplied. Do not make that absolute path a runtime dependency.
 
 ## Visual rules
 
-- Toolbar popup: intrinsic 360px width and 20px padding, explicitly selected by `options.html?view=popup` through `options-view.js` before styles load. Never cap native popup width with `100vw`: Chrome derives the viewport from the content, creating a circular shrink loop. The full settings page keeps its responsive 360px viewport cap, up to 440px with 26px padding on wide screens.
+- Toolbar popup: intrinsic 360px width and 20px padding, fixed by `data-view="popup"` on `popup.html`'s `<html>`, so it applies before any script runs. Never cap native popup width with `100vw`: Chrome derives the viewport from the content, creating a circular shrink loop. The full settings page keeps its responsive 360px viewport cap, up to 440px with 26px padding on wide screens.
 - Light/dark settings follow the system. Embedded notice follows the host's effective theme.
 - Settings palette: Sai/佐為-inspired restrained wisteria, ink and ivory, implemented using Radix Colors `violet`, `mauve`, and `sand`. This is the requested product color direction, not a finalized cross-product Sai identity or character/logo asset. Product names and typography remain unchanged.
 - Primary accent: Radix `violet9` (`#6e56cf`); light hover uses `violet10`, while dark hover uses violet9 mixed with 12% black to keep white button text above 4.5:1. Selected backgrounds and text use violet steps 3/11/12. The S mark remains a product placeholder, now matte instead of glowing.
 - Light canvas/surface: sand2/sand1. Dark canvas/surface: mauve1/mauve2. Primary/muted text: mauve12/mauve11. Passive borders: mauve6; interactive borders: mauve9, for clearer control boundaries.
 - Success/error messages use green/red steps 3/7/12, with step 12 text chosen for stronger contrast on the tinted background. Color always accompanies text.
 - Selected control indicators use violet9 in light mode and violet11 in dark mode, rather than the same accent in both themes, to preserve contrast against the selected surface.
-- `extension/vendor/radix-colors.css` is a generated, namespaced light/dark hex palette from the installed package. It is loaded only by `options.html`; no CDN, framework or runtime npm import is needed. `npm run colors:sync` refreshes it after dependency changes; `npm run colors:check` checks version/data/license drift. Keep `RADIX-LICENSE.txt` in the shipped extension.
+- `src/index.css` imports the `@radix-ui/colors` scales (light on `:root`, dark on `.dark`, which `main.tsx` sets from the system theme) and Vite bundles them; no CDN. They are loaded only by the settings pages, never injected into ChatGPT. Keep `public/RADIX-LICENSE.txt` in the shipped extension.
 - Shared brand guidelines outside this repo still describe the previous baseline; this is a product-specific override. Do not silently recolor other products or the shared pack.
 - System font: 14px base, 17px product heading, 13px field labels, 12px help and status text.
 - Related controls use 8–12px gaps; distinct sections use 16–20px separation.

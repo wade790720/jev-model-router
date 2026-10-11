@@ -48,7 +48,7 @@ npx wrangler@latest deploy
 
 設定自訂網域：Cloudflare Workers & Pages → 該 Worker → Settings → Domains & Routes → Custom Domain。或在 wrangler.jsonc 加 routes 的 custom_domain=true（僅填已確認網域，不覆蓋既有用途）。
 
-確認 /api/health，再將 https 服務根網址及 Skool 網址填進 extension/service-config.js；不含 Key。一般使用者不需自行填服務網址。
+確認 /api/health，再將 https 服務根網址及 Skool 網址填進 src/lib/config.ts，再執行 npm run build；不含 Key。一般使用者不需自行填服務網址。
 
 官方：[D1 建立與綁定](https://developers.cloudflare.com/d1/get-started/)、[Secrets](https://developers.cloudflare.com/workers/configuration/secrets/)、[自訂網域](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/)。
 

@@ -2,7 +2,8 @@ import { createServer } from "node:http";
 import { mkdir, appendFile, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { resolve, join } from "node:path";
-import { sanitizeDiagnostic } from "../extension/diagnostics.js";
+// Node 22.18+ strips the TypeScript types itself; no build step for this script.
+import { sanitizeDiagnostic } from "../src/lib/diagnostics.ts";
 
 export const DEFAULT_DIR = fileURLToPath(new URL("../.local/diagnostics/", import.meta.url));
 export function createCollector({ directory = DEFAULT_DIR, now = Date.now } = {}) {

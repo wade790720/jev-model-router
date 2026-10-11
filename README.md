@@ -2,7 +2,8 @@
 
 ![version](https://img.shields.io/badge/version-0.3.2-blue)
 ![status](https://img.shields.io/badge/status-internal%20testing-orange)
-![node](https://img.shields.io/badge/node-%3E%3D22.13-339933)
+![node](https://img.shields.io/badge/node-%3E%3D22.18-339933)
+![stack](https://img.shields.io/badge/React%20%2B%20TypeScript%20%2B%20Vite-646CFF)
 ![chrome](https://img.shields.io/badge/Chrome%20%2F%20Edge-Manifest%20V3-4285F4)
 
 這是一個 Chrome/Edge 擴充功能，它讀取 ChatGPT 輸入框的草稿。
@@ -28,23 +29,25 @@ ChatGPT 有很多模型和推理強度，簡單的問題用強模型會浪費時
 | --- | --- |
 | 作業系統 | Windows、macOS、Linux 皆可 |
 | 瀏覽器 | Chrome 或 Edge 桌面版（不支援原生桌面 App） |
-| Node.js | 22.13 以上 |
+| Node.js | 22.18 以上（診斷收集器直接執行 TypeScript；Skool 測試使用內建 SQLite） |
 | npm | 隨 Node.js 安裝 |
 | Wrangler | 只有部署 Worker 時需要，用 `npx wrangler@latest` 執行 |
 
-擴充功能不需要建置，也不載入外部字型或 CDN。
+技術：React 19、TypeScript、Vite、Tailwind CSS 4、shadcn/ui、vitest。不載入外部字型或 CDN。
 
-### 安裝擴充功能
+### 建置並安裝擴充功能
 
-1. 下載本專案。
+1. 下載本專案，執行 `npm ci` 和 `npm run build`。輸出在 `dist/`。
 2. 在瀏覽器開啟 `chrome://extensions`（Edge 為 `edge://extensions`）。
 3. 開啟右上角的「開發人員模式」。
-4. 按「載入未封裝項目」，選擇 `extension/` 資料夾。
+4. 按「載入未封裝項目」，選擇 `dist/` 資料夾。
 
-### 安裝開發依賴
+改程式後，再執行一次 `npm run build`，然後在擴充功能頁按「重新載入」。
+
+### 開發設定頁
 
 ```sh
-npm ci
+npm run dev   # 用假資料開啟 http://localhost:5173/options.html，不需載入擴充功能
 ```
 
 ## 使用方式
@@ -73,8 +76,8 @@ npm ci
 ### 測試與檢查
 
 ```sh
-npm test         # 執行全部單元測試
-npm run check    # 檢查語法與配色檔是否同步
+npm test         # 執行全部單元測試（vitest）
+npm run check    # TypeScript 型別檢查（擴充功能與 Worker）
 ```
 
 測試不使用真實 Key、會員資料或 ChatGPT 對話。
@@ -104,26 +107,30 @@ Jev 從固定選項中選一個：
 | 對話 | `instant`、`medium`、`high`、`pro` |
 | 工作 | `luna`、`sol_low`、`sol_medium`、`astra_low`、`astra_medium`、`astra_xhigh` |
 
-ChatGPT 新增模型時，必須手動更新 `extension/route.js`，程式不會自動新增選項。
+ChatGPT 新增模型時，必須手動更新 `src/lib/route.ts`，程式不會自動新增選項。
 
 ## 專案結構
 
+測試檔（`*.test.ts`）放在受測程式旁邊。
+
 ```text
-extension/
-  content.js         偵測輸入框與模式，排除過期回應，顯示推薦
-  route.js           模型選項、判斷標準、回應驗證（擴充功能與 Worker 共用）
-  background.js      選擇接入方式，處理逾時
-  service-config.js  公開服務網址與 Skool 網址（不含私鑰）
-  options.*          設定頁
-  diagnostics.js     本機推薦診斷
-  _locales/          en、zh_TW、zh_CN、ja、ko
+options.html, popup.html   設定頁和工具列彈出視窗（Vite 入口）
+src/
+  App.tsx, main.tsx        設定頁 UI（React + shadcn/ui）
+  background.ts            Service worker：選擇接入方式，處理逾時
+  content/router.ts        偵測輸入框與模式，排除過期回應，顯示推薦
+  lib/route.ts             模型選項、判斷標準、回應驗證（擴充功能與 Worker 共用）
+  lib/config.ts            公開服務網址與 Skool 網址（不含私鑰）
+  lib/i18n.ts              介面文字（en、zh-Hant、zh-Hans、ja、ko）
+  lib/diagnostics.ts       本機推薦診斷
+  components/ui/           shadcn/ui 元件
+public/                    manifest.json、_locales、content.css（原樣複製到 dist/）
 worker/
-  src/skool.js       目前的部署入口：健康檢查、推薦、管理者會員管理
-  src/index.js       共用路由與用量限制（舊 Stripe 程式保留，不對外開放）
-  migrations/        D1 資料表變更
-scripts/             診斷收集器、配色同步、內部測試工具
-tests/               node:test 單元測試
-docs/                部署、隱私、診斷與歷史文件
+  src/skool.ts             目前的部署入口：健康檢查、推薦、管理者會員管理
+  src/index.ts             共用路由與用量限制（舊 Stripe 程式保留，不對外開放）
+  migrations/              D1 資料表變更
+scripts/                   content script 打包、診斷收集器、內部測試工具
+docs/                      部署、隱私、診斷與歷史文件
 ```
 
 ## 貢獻
@@ -133,10 +140,10 @@ docs/                部署、隱私、診斷與歷史文件
 提交變更前：
 
 1. 執行 `npm test` 與 `npm run check`，兩者都必須通過。
-2. 改路由規則時，同時更新 `extension/route.js` 和對應測試。
+2. 改路由規則時，同時更新 `src/lib/route.ts` 和對應測試，並重新部署 Worker。
 3. 不要把 Key、token 或 Secret 寫進 Git、文件或擴充功能程式。
 4. UI 或 DOM 相關變更，要在真實 Chrome／Edge 帳號上驗證對話、工作模式、IME 與明暗主題。
 
 ## 授權
 
-`extension/vendor/radix-colors.css` 來自 Radix Colors，授權見 [RADIX-LICENSE.txt](extension/vendor/RADIX-LICENSE.txt)。
+設定頁配色來自 Radix Colors，授權見 [RADIX-LICENSE.txt](public/RADIX-LICENSE.txt)。

@@ -1,0 +1,75 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+/* Sai/佐為 palette (DESIGN.md): Radix Colors scales, light on :root, dark on .dark.
+   MIT licensed, see public/RADIX-LICENSE.txt. Settings pages only; never injected into ChatGPT. */
+@import "@radix-ui/colors/violet.css";
+@import "@radix-ui/colors/violet-dark.css";
+@import "@radix-ui/colors/mauve.css";
+@import "@radix-ui/colors/mauve-dark.css";
+@import "@radix-ui/colors/sand.css";
+@import "@radix-ui/colors/sand-dark.css";
+@import "@radix-ui/colors/green.css";
+@import "@radix-ui/colors/green-dark.css";
+@import "@radix-ui/colors/amber.css";
+@import "@radix-ui/colors/amber-dark.css";
+@import "@radix-ui/colors/red.css";
+@import "@radix-ui/colors/red-dark.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* shadcn token names, so its components pick them up as is. .dark is set on <html> in main.tsx. */
+:root {
+  color-scheme: light;
+  --radius: 9px;
+  --background: var(--sand-2);
+  --card: var(--sand-1);
+  --raised: var(--sand-2);
+  --foreground: var(--mauve-12);
+  --muted-foreground: var(--mauve-11);
+  --border: var(--mauve-6);
+  --input: var(--mauve-9);
+  --primary: var(--violet-9);
+  --primary-hover: var(--violet-10);
+  --primary-foreground: #fff;
+  --accent: var(--violet-3);
+  --ring: var(--violet-11);
+}
+
+.dark {
+  color-scheme: dark;
+  --background: var(--mauve-1);
+  --card: var(--mauve-2);
+  --raised: var(--mauve-3);
+  /* violet9 + 12% black keeps white button text above 4.5:1. */
+  --primary-hover: color-mix(in srgb, var(--violet-9) 88%, black);
+}
+
+@theme inline {
+  --radius-md: var(--radius);
+  --color-background: var(--background);
+  --color-card: var(--card);
+  --color-raised: var(--raised);
+  --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-ring: var(--ring);
+}
+
+@layer base {
+  html { background: var(--background); color: var(--foreground); font: 14px/1.45 system-ui, sans-serif; }
+  body { width: min(360px, 100vw); margin: 0; background: var(--card); }
+  /* Toolbar popups need an intrinsic width: 100vw there creates a shrink loop in Chrome's popup host. */
+  html[data-view="popup"], html[data-view="popup"] body { width: 360px; min-width: 360px; }
+  @media (min-width: 600px) {
+    html[data-view="settings"] body { width: min(440px, calc(100vw - 48px)); margin: 48px auto; border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 16px 40px #0002; }
+  }
+  ::selection { color: var(--foreground); background: var(--accent); }
+  summary { cursor: pointer; }
+  summary:focus-visible, input[type="checkbox"]:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
+  input[type="checkbox"] { accent-color: var(--primary); }
+}
