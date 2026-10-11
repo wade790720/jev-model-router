@@ -21,13 +21,13 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
   headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" }
 });
 
-async function sha256(value: string) {
+export async function sha256(value: string) {
   const bytes = new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(value)));
   return [...bytes].map(byte => byte.toString(16).padStart(2, "0")).join("");
 }
 
 
-function utcWindows() {
+export function utcWindows() {
   const now = new Date();
   return {
     minute: `minute:${now.toISOString().slice(0, 16)}`,
@@ -35,7 +35,7 @@ function utcWindows() {
   };
 }
 
-async function reserveRequest(db: D1Database, subject: string, windowKey: string, maxRequests: number) {
+export async function reserveRequest(db: D1Database, subject: string, windowKey: string, maxRequests: number) {
   const result = await db.prepare(
     "INSERT INTO usage_windows (subject, window_key, requests) VALUES (?, ?, 1) " +
     "ON CONFLICT(subject, window_key) DO UPDATE SET requests = requests + 1 WHERE requests < ?"

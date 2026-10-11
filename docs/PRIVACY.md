@@ -9,3 +9,7 @@
 - 本機診斷維持測試版預設開啟；可關閉。不含草稿／Key，只送這台電腦本機收集器。0.3 完成事件標記為 suggested，不是 switching success。見 [DIAGNOSTICS.md](DIAGNOSTICS.md)。
 - 目前 email 登入／寄信與 Skool 自動同步尚未完成。不得公開收費發布；須先驗證新會員、取消、到期、同步中斷與資料刪除流程。
 - 正式發布前補實際營運者、聯絡方式、會員與診斷保存期限、刪除／查詢方法、Cloudflare／TypeSafe／Skool 政策連結與寄信服務資料處理說明。
+
+## Skool 會員驗證（託管服務）
+
+使用託管服務時，擴充功能會把瀏覽器中 skool.com 的 cookie 送到 router.tekuei.com，伺服器只用它向 Skool 確認你是否為百寶袋俱樂部會員，確認後立即丟棄，不儲存、不記錄。伺服器只保留 Skool 使用者 ID 的雜湊值與 24 小時的使用憑證。在進階設定填入自己的 TypeSafe API key 時，不會送出任何 Skool cookie。

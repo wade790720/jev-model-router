@@ -1,5 +1,6 @@
 import { route, type Env } from "./index";
 import { ackErrors, intakeErrors, listErrors, pruneErrors } from "./errors";
+import { createSession } from "./session";
 
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { "cache-control": "no-store" } });
 const encode = (value: string) => new TextEncoder().encode(value);
@@ -55,6 +56,7 @@ export default {
       if (path === "/api/health" && request.method === "GET") return json({ ok: true, service: "smart-chatgpt", membership: "skool", signInReady: false });
       if (path === "/api/route" && request.method === "POST") return await route(request, env);
       if (path === "/api/admin/members" && request.method === "POST") return await updateMember(request, env);
+      if (path === "/api/session" && request.method === "POST") return await createSession(request, env);
       if (path === "/api/errors" && request.method === "POST") return await intakeErrors(request, env);
       if (path.startsWith("/api/admin/errors")) {
         // Own secret, not ADMIN_SYNC_SECRET: the daily AI routine holds it, and it can only read errors.
