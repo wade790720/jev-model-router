@@ -53,7 +53,7 @@ export default {
     const path = new URL(request.url).pathname;
     try {
       if (path === "/api/health" && request.method === "GET") return json({ ok: true, service: "smart-chatgpt", membership: "skool", signInReady: false });
-      if (path === "/api/route" && request.method === "POST") return await route(request, { ...env, MEMBERSHIP_PROVIDER: "skool" });
+      if (path === "/api/route" && request.method === "POST") return await route(request, env);
       if (path === "/api/admin/members" && request.method === "POST") return await updateMember(request, env);
       if (path === "/api/errors" && request.method === "POST") return await intakeErrors(request, env);
       if (path.startsWith("/api/admin/errors")) {

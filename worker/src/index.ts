@@ -1,22 +1,16 @@
 import { buildJevRequest, normalizeJevResponse, type Surface } from "../../src/lib/route";
-import { stripeRequest, verifyStripeSignature } from "./stripe";
 
 export interface Env {
   DB?: D1Database;
   TYPESAFE_API_KEY?: string;
-  MEMBERSHIP_PROVIDER?: string;
   ADMIN_SYNC_SECRET?: string;
   ERRORS_ADMIN_SECRET?: string;
   MEMBER_HASH_SECRET?: string;
-  STRIPE_SECRET_KEY?: string;
-  STRIPE_PRICE_ID?: string;
-  STRIPE_WEBHOOK_SECRET?: string;
   MAX_PROMPT_CHARS?: string;
   MAX_REQUESTS_PER_MINUTE?: string;
   MAX_REQUESTS_PER_DAY?: string;
   MAX_INPUT_TOKENS_PER_DAY?: string;
   GLOBAL_INPUT_TOKENS_PER_DAY?: string;
-  MAX_CHECKOUTS_PER_IP_10_MIN?: string;
 }
 type LimitKey = Extract<keyof Env, `MAX_${string}` | `GLOBAL_${string}`>;
 
@@ -32,17 +26,11 @@ async function sha256(value: string) {
   return [...bytes].map(byte => byte.toString(16).padStart(2, "0")).join("");
 }
 
-function newCode() {
-  const bytes = crypto.getRandomValues(new Uint8Array(32));
-  return `jmr_${[...bytes].map(byte => byte.toString(16).padStart(2, "0")).join("")}`;
-}
 
 function utcWindows() {
   const now = new Date();
-  const tenMinute = new Date(Math.floor(now.getTime() / 600000) * 600000);
   return {
     minute: `minute:${now.toISOString().slice(0, 16)}`,
-    tenMinute: `ten-minute:${tenMinute.toISOString().slice(0, 16)}`,
     day: `day:${now.toISOString().slice(0, 10)}`
   };
 }
@@ -92,10 +80,8 @@ export async function route(request: Request, env: Env) {
   const token = request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
   if (!token?.startsWith("jmr_") || token.length !== 68) return json({ error: "需要有效的訂閱啟用碼" }, 401);
   const tokenHash = await sha256(token);
-  const license = env.MEMBERSHIP_PROVIDER === "skool"
-    ? await env.DB.prepare("SELECT m.status FROM member_sessions s JOIN members m ON m.member_hash = s.member_hash WHERE s.token_hash = ? AND s.expires_at > unixepoch() AND m.valid_until > unixepoch()").bind(tokenHash).first<{ status: string }>()
-    : await env.DB.prepare("SELECT status FROM licenses WHERE token_hash = ?").bind(tokenHash).first<{ status: string }>();
-  if (license?.status !== "active") return json({ error: "訂閱未啟用或已到期" }, 403);
+  const member = await env.DB.prepare("SELECT m.status FROM member_sessions s JOIN members m ON m.member_hash = s.member_hash WHERE s.token_hash = ? AND s.expires_at > unixepoch() AND m.valid_until > unixepoch()").bind(tokenHash).first<{ status: string }>();
+  if (member?.status !== "active") return json({ error: "訂閱未啟用或已到期" }, 403);
   const body = await request.json().catch(() => null) as { text?: unknown; surface?: unknown } | null;
   const text = body?.text;
   const surface = body?.surface ?? "chat";
@@ -129,127 +115,3 @@ export async function route(request: Request, env: Env) {
     return json({ error: (error as Error).name === "AbortError" ? "JEV 回應逾時" : "JEV 暫時無法提供判斷" }, 502);
   }
 }
-
-async function checkout(request: Request, env: Env) {
-  if (!env.DB) return json({ error: "Database is not configured" }, 503);
-  if (!env.STRIPE_PRICE_ID || env.STRIPE_PRICE_ID.startsWith("REPLACE_")) return json({ error: "訂閱方案尚未設定" }, 503);
-  const ip = request.headers.get("CF-Connecting-IP") ?? "unknown";
-  const subject = `checkout:${await sha256(`${env.STRIPE_SECRET_KEY ?? ""}:${ip}`)}`;
-  if (!await reserveRequest(env.DB, subject, utcWindows().tenMinute, limits(env, "MAX_CHECKOUTS_PER_IP_10_MIN", 5))) {
-    return json({ error: "結帳請求太頻繁，請稍後再試" }, 429);
-  }
-  const origin = new URL(request.url).origin;
-  const params = new URLSearchParams({
-    mode: "subscription",
-    "line_items[0][price]": env.STRIPE_PRICE_ID,
-    "line_items[0][quantity]": "1",
-    success_url: `${origin}/activate?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${origin}/cancel`
-  });
-  try {
-    const session = await stripeRequest(env, "checkout/sessions", { method: "POST", body: params });
-    return json({ url: session.url });
-  } catch {
-    return json({ error: "無法建立結帳頁面" }, 502);
-  }
-}
-
-async function portal(request: Request, env: Env) {
-  if (!env.DB) return json({ error: "Database is not configured" }, 503);
-  const token = request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
-  if (!token?.startsWith("jmr_") || token.length !== 68) return json({ error: "需要有效的訂閱啟用碼" }, 401);
-  const tokenHash = await sha256(token);
-  const license = await env.DB.prepare("SELECT subscription_id FROM licenses WHERE token_hash = ?").bind(tokenHash).first<{ subscription_id: string }>();
-  if (!license) return json({ error: "找不到此訂閱" }, 403);
-  try {
-    const subscription = await stripeRequest(env, `subscriptions/${encodeURIComponent(license.subscription_id)}`);
-    const origin = new URL(request.url).origin;
-    const params = new URLSearchParams({ customer: subscription.customer, return_url: `${origin}/portal-return` });
-    const session = await stripeRequest(env, "billing_portal/sessions", { method: "POST", body: params });
-    return json({ url: session.url });
-  } catch {
-    return json({ error: "暫時無法開啟訂閱管理頁" }, 502);
-  }
-}
-
-function html(body: string, status = 200) {
-  return new Response(body, {
-    status,
-    headers: {
-      "content-type": "text/html; charset=utf-8",
-      "cache-control": "no-store",
-      "referrer-policy": "no-referrer",
-      "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'"
-    }
-  });
-}
-
-async function activate(request: Request, env: Env) {
-  const sessionId = new URL(request.url).searchParams.get("session_id");
-  if (!sessionId?.startsWith("cs_")) return html("Invalid session", 400);
-  if (!env.DB) return html("Database unavailable", 503);
-  try {
-    const session = await stripeRequest(env, `checkout/sessions/${encodeURIComponent(sessionId)}`);
-    if (session.mode !== "subscription" || session.payment_status !== "paid" || !session.subscription) {
-      return html("Payment not complete", 403);
-    }
-    const subscription = await stripeRequest(env, `subscriptions/${encodeURIComponent(session.subscription)}`);
-    if (subscription.status !== "active") return html("Subscription not active", 403);
-    const token = newCode();
-    const tokenHash = await sha256(token);
-    await env.DB.prepare(
-      "INSERT INTO licenses (subscription_id, token_hash, status, updated_at) VALUES (?, ?, 'active', ?) " +
-      "ON CONFLICT(subscription_id) DO UPDATE SET token_hash = excluded.token_hash, status = 'active', updated_at = excluded.updated_at"
-    ).bind(subscription.id, tokenHash, Math.floor(Date.now() / 1000)).run();
-    return html(`<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><title>ChatGPT 智慧選模型｜訂閱啟用</title><style>body{font:16px system-ui;max-width:680px;margin:48px auto;padding:16px}code{display:block;overflow-wrap:anywhere;padding:16px;background:#eee}</style><h1>訂閱已啟用</h1><p>把下方啟用碼貼進「ChatGPT 智慧選模型」設定頁。重新開啟此頁會產生新碼，舊碼將失效。</p><code>${token}</code></html>`);
-  } catch {
-    return html("Activation failed. Please contact support.", 502);
-  }
-}
-
-async function stripeWebhook(request: Request, env: Env) {
-  const payload = await request.text();
-  if (!await verifyStripeSignature(payload, request.headers.get("Stripe-Signature"), env.STRIPE_WEBHOOK_SECRET)) {
-    return json({ error: "Invalid Stripe signature" }, 400);
-  }
-  const event = JSON.parse(payload);
-  if (event.type?.startsWith("customer.subscription.")) {
-    const subscription = event.data?.object;
-    if (subscription?.id && env.DB) {
-      let status = "inactive";
-      if (event.type !== "customer.subscription.deleted") {
-        try {
-          const current = await stripeRequest(env, `subscriptions/${encodeURIComponent(subscription.id)}`);
-          status = current.status === "active" ? "active" : "inactive";
-        } catch {
-          status = "inactive";
-        }
-      }
-      await env.DB.prepare("UPDATE licenses SET status = ?, updated_at = ? WHERE subscription_id = ?")
-        .bind(status, Math.floor(Date.now() / 1000), subscription.id).run();
-    }
-  }
-  return json({ received: true });
-}
-
-export default {
-  async fetch(request: Request, env: Env) {
-    const { pathname } = new URL(request.url);
-    try {
-      if (pathname === "/api/health" && request.method === "GET") return json({ ok: true });
-      if (pathname === "/api/route" && request.method === "POST") return route(request, env);
-      if (pathname === "/api/checkout" && request.method === "POST") return checkout(request, env);
-      if (pathname === "/api/portal" && request.method === "POST") return portal(request, env);
-      if (pathname === "/api/stripe-webhook" && request.method === "POST") return stripeWebhook(request, env);
-      if (pathname === "/activate" && request.method === "GET") return activate(request, env);
-      if (pathname === "/cancel" && request.method === "GET") return html("<p>付款已取消。您可以關閉這個分頁。</p>");
-      if (pathname === "/portal-return" && request.method === "GET") return html("<p>您可以關閉這個分頁。</p>");
-      return json({ error: "Not found" }, 404);
-    } catch {
-      return json({ error: "服務暫時無法處理請求" }, 500);
-    }
-  },
-  async scheduled(_event: ScheduledController, env: Env) {
-    if (env.DB) await env.DB.prepare("DELETE FROM usage_windows WHERE created_at < unixepoch() - 604800").run();
-  }
-};

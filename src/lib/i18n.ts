@@ -46,7 +46,7 @@ const en = {
   save: "Save settings", needServiceUrl: "Enter the service URL first", rootUrlOnly: "Use the service root URL without a path or query",
   httpsOnly: "The service URL must use HTTPS", needServiceAccess: "Allow the extension to connect to the service URL",
   needMode: "Choose a connection method", needTypeSafeKey: "Enter a TypeSafe API key", needSubscriptionDetails: "Enter the service URL and activation code",
-  saved: "Saved. Return to ChatGPT and type a draft to begin.", checkoutFailed: "Could not open the subscription page",
+  saved: "Saved. Return to ChatGPT and type a draft to begin.",
   manageFailed: "Could not open subscription management", needActivationCode: "Enter your subscription activation code first"
 };
 
@@ -100,7 +100,7 @@ const messages: Record<Locale, Partial<Record<MessageKey, string>>> = {
     save: "儲存設定", needServiceUrl: "請先輸入服務網址", rootUrlOnly: "請填入服務根網址，不含路徑或參數",
     httpsOnly: "服務網址必須使用 HTTPS", needServiceAccess: "需要允許擴充功能連線到服務網址",
     needMode: "請選擇接入方式", needTypeSafeKey: "請填入 TypeSafe API key", needSubscriptionDetails: "請填入服務網址與啟用碼",
-    saved: "已儲存。回到 ChatGPT 輸入文字即可開始。", checkoutFailed: "無法開啟訂閱頁面",
+    saved: "已儲存。回到 ChatGPT 輸入文字即可開始。",
     manageFailed: "無法開啟訂閱管理頁面", needActivationCode: "請先填入訂閱啟用碼"
   },
   "zh-Hans": {
@@ -148,7 +148,7 @@ const messages: Record<Locale, Partial<Record<MessageKey, string>>> = {
     save: "保存设置", needServiceUrl: "请先输入服务网址", rootUrlOnly: "请填写不含路径或参数的服务根网址",
     httpsOnly: "服务网址必须使用 HTTPS", needServiceAccess: "需要允许扩展连接到服务网址",
     needMode: "请选择接入方式", needTypeSafeKey: "请填写 TypeSafe API key", needSubscriptionDetails: "请填写服务网址和激活码",
-    saved: "已保存。回到 ChatGPT 输入文字即可开始。", checkoutFailed: "无法打开订阅页面",
+    saved: "已保存。回到 ChatGPT 输入文字即可开始。",
     manageFailed: "无法打开订阅管理页面", needActivationCode: "请先填写订阅激活码"
   },
   ja: {
@@ -196,7 +196,7 @@ const messages: Record<Locale, Partial<Record<MessageKey, string>>> = {
     save: "設定を保存", needServiceUrl: "サービス URL を入力してください", rootUrlOnly: "パスやクエリを含まないルート URL を入力してください",
     httpsOnly: "サービス URL は HTTPS が必要です", needServiceAccess: "サービス URL への接続を許可してください",
     needMode: "接続方法を選択してください", needTypeSafeKey: "TypeSafe API key を入力してください", needSubscriptionDetails: "サービス URL とコードを入力してください",
-    saved: "保存しました。ChatGPT で入力を始めてください。", checkoutFailed: "契約ページを開けません",
+    saved: "保存しました。ChatGPT で入力を始めてください。",
     manageFailed: "契約管理ページを開けません", needActivationCode: "アクティベーションコードを入力してください"
   },
   ko: {
@@ -244,7 +244,7 @@ const messages: Record<Locale, Partial<Record<MessageKey, string>>> = {
     save: "설정 저장", needServiceUrl: "서비스 URL을 입력하세요", rootUrlOnly: "경로나 쿼리가 없는 서비스 루트 URL을 입력하세요",
     httpsOnly: "서비스 URL은 HTTPS를 사용해야 합니다", needServiceAccess: "서비스 URL 연결을 허용하세요",
     needMode: "연결 방법을 선택하세요", needTypeSafeKey: "TypeSafe API key를 입력하세요", needSubscriptionDetails: "서비스 URL과 활성화 코드를 입력하세요",
-    saved: "저장했습니다. ChatGPT에서 입력을 시작하세요.", checkoutFailed: "구독 페이지를 열 수 없습니다",
+    saved: "저장했습니다. ChatGPT에서 입력을 시작하세요.",
     manageFailed: "구독 관리 페이지를 열 수 없습니다", needActivationCode: "활성화 코드를 입력하세요"
   }
 };
