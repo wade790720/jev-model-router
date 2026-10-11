@@ -1,6 +1,5 @@
 import { afterEach, expect, test, vi } from "vitest";
-import { SERVICE_CONFIG, type ServiceConfig } from "./config";
-import { routeDraft, type CodedError } from "./route-draft";
+import { routeDraft, TYPE_SAFE_URL, type CodedError } from "./route-draft";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -9,46 +8,25 @@ function background(settings: Record<string, unknown>) {
   vi.stubGlobal("chrome", { storage: { local: { get: async () => settings } } });
   vi.stubGlobal("fetch", async (url: string, init: RequestInit) => {
     requests.push({ url, init });
-    return Response.json(settings.connectionMode === "personal"
-      ? { answers: { response_mode: { type: "choice", choice: "instant", confidence: .9 } } }
-      : { mode: "instant", confidence: .9 });
+    return Response.json({ answers: { response_mode: { type: "choice", choice: "instant", confidence: .9 } } });
   });
-  return { route: (text: string, config: ServiceConfig = {}) => routeDraft(text, "chat", config), requests };
+  return { route: (text: string) => routeDraft(text, "chat"), requests };
 }
 
-test("shipped hosted configuration points to the verified domain and Skool community", () => {
-  expect(SERVICE_CONFIG.serviceUrl).toBe("https://router.tekuei.com");
-  expect(SERVICE_CONFIG.skoolUrl).toBe("https://www.skool.com/forge-1085/about");
-});
-
-test("configured personal access works without a consent flag or despite the old false flag", async () => {
+test("the member's own key goes straight to TypeSafe, with or without the old consent flag", async () => {
   for (const flag of [undefined, false]) {
-    const api = background({ connectionMode: "personal", typeSafeKey: "synthetic-key", routingConsent: flag });
+    const api = background({ typeSafeKey: "synthetic-key", routingConsent: flag });
     expect((await api.route("Synthetic task")).mode).toBe("instant");
     expect(api.requests).toHaveLength(1);
+    expect(api.requests[0].url).toBe(TYPE_SAFE_URL);
+    expect((api.requests[0].init.headers as Record<string, string>).Authorization).toBe("Bearer synthetic-key");
   }
 });
 
-test("hosted is the default and the shipped URL overrides stale stored endpoints", async () => {
-  const api = background({ routingConsent: true, activationCode: "synthetic-token", workerUrl: "https://old.example" });
-  expect((await api.route("Synthetic task", { serviceUrl: "https://router.example" })).mode).toBe("instant");
-  expect(api.requests[0].url).toBe("https://router.example/api/route");
-});
-
-test("personal key remains direct and does not require hosted membership", async () => {
-  const api = background({ routingConsent: true, connectionMode: "personal", typeSafeKey: "synthetic-key" });
-  await api.route("Synthetic task");
-  expect(api.requests[0].url).toBe("https://api.typesafe.ai/v1/systemone");
-});
-
-test("missing key, unconfigured hosted service and missing membership are distinct local failures", async () => {
-  for (const [settings, config, code] of [
-    [{ routingConsent: true, connectionMode: "personal" }, {}, "routing_key_missing"],
-    [{ routingConsent: true }, {}, "routing_service_unconfigured"],
-    [{ routingConsent: true }, { serviceUrl: "https://router.example" }, "routing_membership_missing"]
-  ] as const) {
+test("without a key nothing is sent, including for installs left on the removed hosted mode", async () => {
+  for (const settings of [{}, { connectionMode: "subscription", activationCode: "old-token", workerUrl: "https://router.example" }]) {
     const api = background(settings);
-    await expect(api.route("Synthetic task", config)).rejects.toSatisfy((error: CodedError) => error.code === code);
+    await expect(api.route("Synthetic task")).rejects.toSatisfy((error: CodedError) => error.code === "routing_key_missing");
     expect(api.requests).toHaveLength(0);
   }
 });

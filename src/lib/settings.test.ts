@@ -1,17 +1,14 @@
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { createActionRunner, loadSettings, login, saveSettings, type Status } from "./settings";
+import { createActionRunner, loadSettings, saveSettings, type Status } from "./settings";
 
 let writes: Record<string, unknown>[];
-let permissions: { origins: string[] }[];
 function storage(stored: Record<string, unknown> = {}) {
   vi.stubGlobal("chrome", {
     i18n: { getUILanguage: () => "zh-TW" },
-    storage: { local: { get: async () => stored, set: async (value: Record<string, unknown>) => { writes.push(value); } } },
-    permissions: { request: async (request: { origins: string[] }) => { permissions.push(request); return true; } },
-    tabs: { create: async () => {} }
+    storage: { local: { get: async () => stored, set: async (value: Record<string, unknown>) => { writes.push(value); } } }
   });
 }
-beforeEach(() => { writes = []; permissions = []; storage(); });
+beforeEach(() => { writes = []; storage(); });
 afterEach(() => vi.unstubAllGlobals());
 
 function runner() {
@@ -50,41 +47,15 @@ test("failed actions expose recovery feedback and remain retryable", async () =>
   expect(ui.busy.has("save")).toBe(false);
 });
 
-test("loads an existing personal key and saves without service permission", async () => {
-  storage({ connectionMode: "personal", typeSafeKey: "test-key" });
+test("loads the stored key and saves it as the only connection mode", async () => {
+  storage({ connectionMode: "subscription", typeSafeKey: " test-key ", activationCode: "old-token" });
   const form = await loadSettings();
-  expect(form.usePersonalKey).toBe(true);
-  expect(form.typeSafeKey).toBe("test-key");
-  expect(form.diagnosticsEnabled).toBe(true);
+  expect(form).toEqual({ typeSafeKey: " test-key " });
   await saveSettings(form);
-  expect(writes[0].connectionMode).toBe("personal");
-  expect(writes[0].typeSafeKey).toBe("test-key");
-  expect(permissions).toHaveLength(0);
+  expect(writes).toEqual([{ connectionMode: "personal", typeSafeKey: "test-key" }]);
 });
 
-test("switching to hosted access preserves the service permission flow", async () => {
-  storage({ connectionMode: "personal", typeSafeKey: "test-key" });
-  const form = { ...await loadSettings(), usePersonalKey: false, workerUrl: "https://router.example.com/", activationCode: "test-code" };
-  await saveSettings(form, {});
-  expect(writes[0].connectionMode).toBe("subscription");
-  expect(writes[0].workerUrl).toBe("https://router.example.com");
-  expect(permissions).toEqual([{ origins: ["https://router.example.com/*"] }]);
-});
-
-test("fresh install defaults to hosted and save validates access rather than a consent checkbox", async () => {
-  const form = await loadSettings();
-  expect(form.usePersonalKey).toBe(false);
-  await expect(saveSettings(form, {})).rejects.toThrow(/服務網址/);
+test("saving without a key explains what is missing and writes nothing", async () => {
+  await expect(saveSettings(await loadSettings())).rejects.toThrow(/TypeSafe/);
   expect(writes).toHaveLength(0);
-});
-
-test("hosted save rejects non-root and plain-HTTP service URLs", async () => {
-  const form = { usePersonalKey: false, typeSafeKey: "", activationCode: "test-code", workerUrl: "" };
-  await expect(saveSettings({ ...form, workerUrl: "https://router.example.com/api" }, {})).rejects.toThrow(/根網址/);
-  await expect(saveSettings({ ...form, workerUrl: "http://router.example.com" }, {})).rejects.toThrow(/HTTPS/);
-  expect(writes).toHaveLength(0);
-});
-
-test("member login fails honestly until email verification is implemented", async () => {
-  await expect(login()).rejects.toThrow(/尚未開通/);
 });

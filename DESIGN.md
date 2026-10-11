@@ -32,9 +32,9 @@ Shared brand pack for this maintainer lives outside this repository at `C:/Users
 - Inter Variable (bundled), weights 400–600, no 700: 14px base, 17px product heading, 13px field labels, 12px help and status text.
 - Controls are 36px high (buttons and text inputs), small buttons 32px, same as the other brand products. Secondary actions use the outline Button (hairline border). `src/components/ui/button.tsx` and `input.tsx` are shared brand-module files, identical in all three products. Collapsible sections use a lucide chevron instead of the native marker.
 - Related controls use 8–12px gaps; distinct sections use 16–20px separation.
-- Hosted service is the fresh-install default. No connection-mode cards. Personal API key is an explicit checkbox inside advanced settings; existing personal settings are preserved.
-- Draft analysis runs by default once access is configured; no separate consent checkbox. Preserve the visible disclosure of text transmission. Member sign-in stays visibly unavailable until implemented; internal test credentials never masquerade as production login.
-- Primary save action dominates. Diagnostics export is a compact secondary action, not a second primary CTA.
+- The member's own TypeSafe API key is the only mode; the hosted service, test access and the diagnostics panel are gone. Skool membership is checked by `MembershipGate` before the page shows. The advanced settings section holds the key and is always open.
+- Draft analysis runs by default once the key is saved; no separate consent checkbox. Preserve the visible disclosure of text transmission.
+- Primary save action dominates. The shared `ReportProblem` controls (report button and the automatic error-report switch, on by default) sit small under it.
 - Embedded notice stays 200px maximum, right-aligned with the composer. Status text wraps; probability values never shrink. Truncated model names expose the full name through their title.
 
 ## Interaction rules
@@ -49,4 +49,4 @@ Shared brand pack for this maintainer lives outside this repository at `C:/Users
 
 ## Verification
 
-Run `npm test` and `npm run check`. Preview settings with fake storage and keys, not live credentials; verify default hosted/advanced personal modes, success/error/busy states, keyboard operation, all supported locales, light/dark themes and long labels. Test the notice's long failure message, two/three choices, full model-name tooltip, focus ring and host theme. A mocked preview verifies presentation and settings interaction, not live ChatGPT DOM compatibility or API correctness.
+Run `npm test` and `npm run check`. Preview settings with fake storage and keys, not live credentials; verify the key field, success/error/busy states, keyboard operation, all supported locales, light/dark themes and long labels. Test the notice's long failure message, two/three choices, full model-name tooltip, focus ring and host theme. A mocked preview verifies presentation and settings interaction, not live ChatGPT DOM compatibility or API correctness.

@@ -9,21 +9,17 @@ const css = read("src/index.css");
 beforeEach(() => vi.stubGlobal("chrome", { i18n: { getUILanguage: () => "zh-TW" } }));
 afterEach(() => vi.unstubAllGlobals());
 
-test("hosted service is default and personal key is only in advanced settings", () => {
+test("the own TypeSafe key is the only setting: no hosted service, test access or diagnostics", () => {
   const html = renderToStaticMarkup(<App />);
-  expect(html).not.toMatch(/name="connectionMode"|id="manage"|id="routingConsent"/);
-  expect(html).toMatch(/<details[^>]*id="advanced"/);
-  expect(html).toMatch(/id="usePersonalKey" type="checkbox"/);
-  expect(html).toMatch(/<section id="subscriptionFields"(?![^>]*hidden)/);
-  expect(html).toMatch(/id="personalFields" hidden/);
+  expect(html).toMatch(/<section[^>]*id="advanced"/);
+  expect(html).toMatch(/id="typeSafeKey"/);
+  expect(html).not.toMatch(/id="(subscriptionFields|usePersonalKey|activationCode|diagnosticsEnabled|exportDiagnostics)"|<details/);
   expect(html).toMatch(/id="consentNote"/);
 });
 
 test("field help is associated and status is a polite live region", () => {
   const html = renderToStaticMarkup(<App />);
-  expect(html).toMatch(/id="typeSafeKey"[^>]*aria-describedby="personalNote"/);
-  expect(html).toMatch(/id="activationCode"[^>]*aria-describedby="testAccessNote"/);
-  expect(html).toMatch(/id="diagnosticsEnabled"[^>]*aria-describedby="diagnosticsNote"/);
+  expect(html).toMatch(/id="typeSafeKey"[^>]*aria-describedby="personalNote consentNote"/);
   const status = html.match(/<div[^>]*id="status"[^>]*>/)?.[0];
   expect(status).toContain('role="status"');
   expect(status).toContain('aria-atomic="true"');
@@ -39,9 +35,9 @@ test("toolbar popup uses an intrinsic width while settings remain responsive", (
   expect(css).toMatch(/width: min\(360px, 100vw\)/);
 });
 
-test("local diagnostic permission is required but not duplicated as optional", () => {
+test("no permission to reach arbitrary sites now that the hosted service is gone", () => {
   expect(manifest.host_permissions).toContain("http://127.0.0.1/*");
-  expect(manifest.optional_host_permissions).not.toContain("http://127.0.0.1/*");
+  expect(manifest.optional_host_permissions).toBeUndefined();
 });
 
 test("settings bundle the shared brand tokens and status palette locally and never leak them into ChatGPT", () => {
