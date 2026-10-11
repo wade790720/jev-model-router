@@ -1,4 +1,5 @@
 import { route, type Env } from "./index";
+import { ackErrors, intakeErrors, listErrors, pruneErrors } from "./errors";
 
 const json = (body: unknown, status = 200) => Response.json(body, { status, headers: { "cache-control": "no-store" } });
 const encode = (value: string) => new TextEncoder().encode(value);
@@ -54,6 +55,12 @@ export default {
       if (path === "/api/health" && request.method === "GET") return json({ ok: true, service: "smart-chatgpt", membership: "skool", signInReady: false });
       if (path === "/api/route" && request.method === "POST") return await route(request, { ...env, MEMBERSHIP_PROVIDER: "skool" });
       if (path === "/api/admin/members" && request.method === "POST") return await updateMember(request, env);
+      if (path === "/api/errors" && request.method === "POST") return await intakeErrors(request, env);
+      if (path.startsWith("/api/admin/errors")) {
+        if (!await authorized(request, env.ADMIN_SYNC_SECRET)) return json({ error: "Unauthorized" }, 401);
+        if (path === "/api/admin/errors" && request.method === "GET") return await listErrors(env, new URL(request.url).searchParams.get("status"));
+        if (path === "/api/admin/errors/ack" && request.method === "POST") return await ackErrors(request, env);
+      }
       return json({ error: "Not found" }, 404);
     } catch {
       // Never log request bodies, email addresses, tokens or provider keys.
@@ -64,7 +71,8 @@ export default {
     if (!env.DB) return;
     await env.DB.batch([
       env.DB.prepare("DELETE FROM usage_windows WHERE created_at < unixepoch() - 604800"),
-      env.DB.prepare("DELETE FROM member_sessions WHERE expires_at <= unixepoch()")
+      env.DB.prepare("DELETE FROM member_sessions WHERE expires_at <= unixepoch()"),
+      pruneErrors(env)
     ]);
   }
 };

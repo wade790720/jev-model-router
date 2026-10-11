@@ -9,6 +9,7 @@ function database() {
   const sql = new DatabaseSync(":memory:");
   sql.exec(readFileSync(new URL("../schema.sql", import.meta.url), "utf8"));
   sql.exec(readFileSync(new URL("../migrations/0001_skool.sql", import.meta.url), "utf8"));
+  sql.exec(readFileSync(new URL("../migrations/0002_errors.sql", import.meta.url), "utf8"));
   const prepare = (query: string) => {
     const bind = (...args: SQLInputValue[]) => ({
       first: async () => sql.prepare(query).get(...args) ?? null,

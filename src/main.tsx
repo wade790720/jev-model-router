@@ -2,8 +2,9 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import { captureErrors } from "./lib/error-log";
+import { ErrorReportingPrompt } from "./components/ReportProblem";
 
-captureErrors();
+captureErrors("jev-model-router");
 
 // Theme follows the system, live. Set first so the page never paints in the wrong theme.
 const dark = matchMedia("(prefers-color-scheme: dark)");
@@ -19,4 +20,4 @@ document.documentElement.lang = locale();
 document.title = t("optionsTitle");
 const { App } = await import("./App");
 const { MembershipGate } = await import("./components/MembershipGate");
-createRoot(document.getElementById("root")!).render(<StrictMode><MembershipGate><App /></MembershipGate></StrictMode>);
+createRoot(document.getElementById("root")!).render(<StrictMode><MembershipGate><App /></MembershipGate><ErrorReportingPrompt /></StrictMode>);
