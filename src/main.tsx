@@ -1,6 +1,9 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
+import { captureErrors } from "./lib/error-log";
+
+captureErrors();
 
 // Theme follows the system, live. Set first so the page never paints in the wrong theme.
 const dark = matchMedia("(prefers-color-scheme: dark)");

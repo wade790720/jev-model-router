@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { ChevronRight } from "lucide-react";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { ReportProblem } from "@/components/ReportProblem";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { t } from "@/lib/i18n";
@@ -118,8 +119,11 @@ export function App() {
             {diagnostics.text}
           </p>
         )}
-        <Button type="button" variant="outline" size="sm" id="exportDiagnostics" {...busyProps("export")}
-          onClick={() => run("export", exportDiagnostics)}>{t("exportDiagnostics")}</Button>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="outline" size="sm" id="exportDiagnostics" {...busyProps("export")}
+            onClick={() => run("export", exportDiagnostics)}>{t("exportDiagnostics")}</Button>
+          <ReportProblem size="sm" />
+        </div>
       </details>
     </main>
   );
