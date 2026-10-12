@@ -177,12 +177,12 @@ test("recommendation-only script cannot operate model menus, focus or sending", 
 for (const surface of ["chat", "work"] as const) {
   test(`high-confidence ${surface} recommendation never changes the selected model`, async () => {
     const click = vi.fn();
-    const events: any[] = [];
+    const sent: string[] = [];
     const trigger = { innerText: surface === "work" ? "GPT-6 Luna" : "Instant", getBoundingClientRect: () => ({ width: 100, height: 30 }), getAttribute: () => null, click };
     const { state, routeDraft } = setup({
       document: { querySelectorAll: (selector: string) => selector === '[data-composer-navigation-target="reasoning"]' ? [trigger] : [] },
       runtime: { sendMessage(message: any, callback: (value: unknown) => void) {
-        if (message.type === "JEV_DIAGNOSTIC") { events.push(message.event); callback({ ok: true }); return; }
+        sent.push(message.type);
         callback({ ok: true, result: { mode: surface === "work" ? "astra_medium" : "high", confidence: .9, topChoices: [] } });
       } }
     });
@@ -191,8 +191,7 @@ for (const surface of ["chat", "work"] as const) {
     expect(await routeDraft(state.text)).toBe(true);
     expect(click).not.toHaveBeenCalled();
     expect(state.badge.dataset.kind).toBe("success");
-    expect(events[0].outcome).toBe("suggested");
-    expect(JSON.stringify(events)).not.toMatch(/synthetic recommendation fixture/);
+    expect(sent, "only the route request leaves the page").toEqual(["JEV_ROUTE"]);
   });
 }
 
@@ -244,14 +243,4 @@ test("ordinary messaging failures do not permanently disable the extension", asy
   runtime.lastError = undefined;
   runtime.sendMessage = (_message: unknown, cb: (value: unknown) => void) => cb({ ok: true });
   expect((await sendRuntime({}))?.ok).toBe(true);
-});
-
-test("late diagnostic callback after reload never throws", async () => {
-  let callback!: (value: unknown) => void;
-  const { recordDiagnostic, state, chrome } = orphan({ sendMessage(_message: unknown, cb: (value: unknown) => void) { callback = cb; } });
-  recordDiagnostic({ outcome: "suggested" });
-  chrome.runtime = undefined;
-  expect(() => callback({ ok: true })).not.toThrow();
-  await Promise.resolve();
-  expect(state.disconnected).toBe(true);
 });

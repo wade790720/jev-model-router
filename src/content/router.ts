@@ -249,26 +249,6 @@ export function createRouter() {
     return { message: t(messages[code] ?? "routeFailed"), kind: setup ? "warning" : "error" };
   }
 
-  function diagnosticSnapshot() {
-    const button = findModelButton();
-    const text = clean(button?.innerText ?? button?.textContent);
-    const items = visibleMenuItems();
-    return {
-      after: selectedWorkModel(button) ?? text.match(/^(?:Extra High|Pro Standard|Pro Extended|Instant|Medium|High|Thinking|Pro)\b/i)?.[0] ?? "unknown",
-      effort: lower(button?.getAttribute?.("data-selected-reasoning-effort")),
-      triggerFound: Boolean(button), menuOpen: button?.getAttribute?.("aria-expanded") === "true",
-      sliderFound: all('[data-reasoning-slider="true"]').some(isUsable),
-      menuItemCount: items.length,
-      availableModels: items.map(item => selectedWorkModel(item) ?? clean(item.innerText ?? item.textContent).match(/^(?:Extra High|Pro Standard|Pro Extended|Instant|Medium|High|Thinking|Pro)\b/i)?.[0]).filter(Boolean)
-    };
-  }
-
-  function recordDiagnostic(event: Record<string, unknown>) {
-    if (state.disconnected) return;
-    sendRuntime({ type: "JEV_DIAGNOSTIC", event: { ...event, locale: locale() } })
-      .catch(() => { /* Diagnostics must never interrupt drafting or sending. */ });
-  }
-
   function inDraft(text: string, version: number, surface = state.surface) {
     return !state.disconnected && !state.composing && text === state.text && version === state.version && surface === state.surface;
   }
@@ -279,30 +259,25 @@ export function createRouter() {
     const surface = state.surface;
     if (state.active?.text === text && state.active.surface === surface && state.active.version === version) return state.active.promise;
     const promise = (async () => {
-      const started = Date.now();
-      let outcome = "cancelled", code = "none", target = "unknown";
       try {
         show(t("analyzing"), "loading");
         const result = await callBackground(text, surface);
         if (!inDraft(text, version, surface)) return false;
         if ((inWorkMode() ? "work" : "chat") !== surface) {
-          code = "surface_changed"; onDraftChange(true); return false;
+          onDraftChange(true); return false;
         }
         const mode = result.mode;
-        target = mode;
         if (surface === "work" ? !WORK_TARGETS[mode] : !chatTitle(mode)) throw new Error(t("unknownMode"));
         state.choices = Array.isArray(result.topChoices) ? result.topChoices : [];
         const title = surface === "work" ? workModeTitle(mode) : chatTitle(mode);
         state.appliedText = text;
         state.failedText = "";
-        outcome = "suggested";
         show(t(result.lowConfidence ? "lowConfidenceRecommendation" : "recommendation", { model: title }),
           result.lowConfidence ? "warning" : "success");
         return true;
       } catch (error) {
         if (inDraft(text, version, surface)) {
-          outcome = "failure";
-          code = (error as CodedError).code ?? "routing_error";
+          const code = (error as CodedError).code ?? "routing_error";
           state.failedText = text;
           const failure = routingFailure(code);
           show(failure.message, failure.kind, []);
@@ -310,10 +285,6 @@ export function createRouter() {
           badge().title = failure.message + " [" + code + "]";
         }
         return false;
-      } finally {
-        try { recordDiagnostic({ surface, outcome, code, stage: outcome === "suggested" ? "complete" : "routing",
-          target, elapsedMs: Date.now() - started, ...diagnosticSnapshot() }); }
-        catch { /* Diagnostics must never interrupt the draft. */ }
       }
     })();
     state.active = { text, surface, version, promise };
@@ -347,10 +318,6 @@ export function createRouter() {
     return all("button, [role='button']")
       .filter(element => isVisible(element) && relevant.test(lower(elementLabel(element))) && !element.closest("[role='menu'], [role='dialog'], article"))
       .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top)[0] ?? null;
-  }
-
-  function visibleMenuItems() {
-    return all("[role='menuitem'], [role='option'], [role='menuitemradio'], [role='radio'], [data-radix-collection-item]").filter(isUsable);
   }
 
   function selectedWorkModel(button: Element | null | undefined) {
@@ -427,5 +394,5 @@ export function createRouter() {
     }
   }, 750);
 
-  return { state, routeDraft, routingFailure, onDraftChange, readText, show, inWorkMode, sendRuntime, recordDiagnostic };
+  return { state, routeDraft, routingFailure, onDraftChange, readText, show, inWorkMode, sendRuntime };
 }

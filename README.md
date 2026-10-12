@@ -82,15 +82,6 @@ npm run check    # TypeScript 型別檢查（擴充功能與 Worker）
 
 測試不使用真實 Key、會員資料或 ChatGPT 對話。
 
-### 本機診斷（選用）
-
-```sh
-npm run diagnostics:collect   # 啟動本機收集器（127.0.0.1:43127）
-npm run diagnostics:summary   # 查看近 14 天統計
-```
-
-診斷不上傳草稿、Key 或完整 DOM，細節見 [本機診斷](docs/DIAGNOSTICS.md)。
-
 ## 架構
 
 ```text
@@ -122,7 +113,6 @@ src/
   lib/route.ts             模型選項、判斷標準、回應驗證（擴充功能與 Worker 共用）
   lib/config.ts            公開服務網址與 Skool 網址（不含私鑰）
   lib/i18n.ts              介面文字（en、zh-Hant、zh-Hans、ja、ko）
-  lib/diagnostics.ts       本機推薦診斷
   components/ui/           shadcn/ui 元件
 public/                    manifest.json、_locales、content.css（原樣複製到 dist/）
 worker/

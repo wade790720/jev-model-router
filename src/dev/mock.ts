@@ -1,5 +1,5 @@
 // `npm run dev` only: an in-memory chrome.* with just what the settings page calls. Fake data, no real keys.
-const store: Record<string, unknown> = { diagnosticsEnabled: true };
+const store: Record<string, unknown> = {};
 
 Object.assign(globalThis, {
   chrome: {
