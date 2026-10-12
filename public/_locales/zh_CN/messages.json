@@ -1,8 +1,8 @@
 {
   "productName": {
-    "message": "ChatGPT 智能选模型"
+    "message": "ChatGPT 模型选择器"
   },
   "productDescription": {
-    "message": "根据输入内容推荐适合的 ChatGPT 模型，由 TypeSafe AI Jev 提供判断；仅提供提示，模型由你自行切换。"
+    "message": "根据输入内容推荐适合的 ChatGPT 模型，由 TypeSafe AI Jev 提供判断；仅提供提示，模型由你自行切换。百宝袋俱乐部会员专用。"
   }
 }

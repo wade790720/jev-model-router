@@ -1,8 +1,8 @@
 {
   "productName": {
-    "message": "Smart ChatGPT"
+    "message": "Model Picker for ChatGPT"
   },
   "productDescription": {
-    "message": "Recommends suitable ChatGPT models from text drafts using TypeSafe AI Jev. You choose and switch the model yourself."
+    "message": "Suggests the right ChatGPT model for your draft, using TypeSafe AI Jev. You switch models yourself. For Wonder Pocket Club members."
   }
 }

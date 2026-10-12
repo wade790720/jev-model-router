@@ -27,11 +27,11 @@ test("product branding follows the browser language in the popup and manifest", 
   expect(manifest.action.default_title).toBe("__MSG_productName__");
   expect(manifest.default_locale).toBe("en");
   for (const [language, folder, expected] of [
-    ["en-US", "en", "Smart ChatGPT"],
-    ["zh-TW", "zh_TW", "ChatGPT 智慧選模型"],
-    ["zh-CN", "zh_CN", "ChatGPT 智能选模型"],
-    ["ja-JP", "ja", "Smart ChatGPT"],
-    ["ko-KR", "ko", "Smart ChatGPT"]
+    ["en-US", "en", "Model Picker for ChatGPT"],
+    ["zh-TW", "zh_TW", "ChatGPT 模型選擇器"],
+    ["zh-CN", "zh_CN", "ChatGPT 模型选择器"],
+    ["ja-JP", "ja", "ChatGPT モデル選択"],
+    ["ko-KR", "ko", "ChatGPT 모델 선택기"]
   ]) {
     const messages = json(`_locales/${folder}/messages.json`);
     as(language);
@@ -40,8 +40,9 @@ test("product branding follows the browser language in the popup and manifest", 
     expect(messages.productDescription.message.length).toBeGreaterThan(0);
     expect(messages.productDescription.message.length).toBeLessThanOrEqual(132);
   }
-  expect(json("_locales/zh_TW/messages.json").productDescription.message).toBe("根據輸入內容推薦適合的 ChatGPT 模型，由 TypeSafe AI Jev 提供判斷；僅提供提示，模型由你自行切換。");
-  expect(json("_locales/zh_CN/messages.json").productDescription.message).toBe("根据输入内容推荐适合的 ChatGPT 模型，由 TypeSafe AI Jev 提供判断；仅提供提示，模型由你自行切换。");
+  expect(json("_locales/zh_TW/messages.json").productDescription.message).toBe("根據輸入內容推薦適合的 ChatGPT 模型，由 TypeSafe AI Jev 提供判斷；僅提供提示，模型由你自行切換。百寶袋俱樂部會員專用。");
+  expect(json("_locales/zh_CN/messages.json").productDescription.message).toBe("根据输入内容推荐适合的 ChatGPT 模型，由 TypeSafe AI Jev 提供判断；仅提供提示，模型由你自行切换。百宝袋俱乐部会员专用。");
+  expect(json("_locales/en/messages.json").productDescription.message).toMatch(/For Wonder Pocket Club members\.$/);
 });
 
 test("an orphaned content script without chrome.* still gets text", () => {

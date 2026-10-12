@@ -1,6 +1,6 @@
-# Smart ChatGPT interface conventions
+# Model Picker for ChatGPT interface conventions
 
-This file describes the existing product UI, not a new brand or a replacement for routing policy. Product names are **Smart ChatGPT** / **ChatGPT 智慧選模型**. TypeSafe AI Jev is the routing provider, not the umbrella brand. Follow explicit user requirements before a design skill's preferred aesthetics.
+This file describes the existing product UI, not a new brand or a replacement for routing policy. Product names are **Model Picker for ChatGPT** / **ChatGPT 模型選擇器** (zh-Hans 模型选择器, ja モデル選択, ko 모델 선택기); the repository stays `jev-model-router`. TypeSafe AI Jev is the routing provider, not the umbrella brand. Follow explicit user requirements before a design skill's preferred aesthetics.
 
 ## Surface and intent
 

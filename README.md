@@ -1,6 +1,8 @@
-# Smart ChatGPT（ChatGPT 智慧選模型）
+# Model Picker for ChatGPT（ChatGPT 模型選擇器）
 
-![version](https://img.shields.io/badge/version-0.3.2-blue)
+> Repo 名稱是 `jev-model-router`；Chrome Web Store 上的名稱是 **Model Picker for ChatGPT**。
+
+![version](https://img.shields.io/badge/version-0.4.0-blue)
 ![status](https://img.shields.io/badge/status-internal%20testing-orange)
 ![node](https://img.shields.io/badge/node-%3E%3D22.18-339933)
 ![stack](https://img.shields.io/badge/React%20%2B%20TypeScript%20%2B%20Vite-646CFF)

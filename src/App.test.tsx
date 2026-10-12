@@ -23,7 +23,7 @@ test("field help is associated and status is a polite live region", () => {
   const status = html.match(/<div[^>]*id="status"[^>]*>/)?.[0];
   expect(status).toContain('role="status"');
   expect(status).toContain('aria-atomic="true"');
-  expect(html).toContain("ChatGPT 智慧選模型");
+  expect(html).toContain("ChatGPT 模型選擇器");
 });
 
 test("toolbar popup uses an intrinsic width while settings remain responsive", () => {
