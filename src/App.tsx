@@ -28,7 +28,8 @@ export function App() {
   return (
     <main className="p-5 min-[600px]:p-[26px]">
       <header className="flex items-center gap-[11px]">
-        <span className="grid size-8 flex-none place-items-center rounded-md brand-mark text-sm font-semibold" aria-hidden="true">S</span>
+        {/* alt is empty: the product name sits right next to the icon. */}
+        <img src="/icons/icon-48.png" alt="" className="size-8 flex-none rounded-md" />
         <div className="min-w-0 flex-1 [overflow-wrap:anywhere]">
           <h1 className="m-0 text-[17px] leading-tight font-semibold tracking-[-.02em]">{t("productName")}</h1>
           <p className="mt-0.5 text-xs text-muted-foreground">{t("popupSubtitle")}</p>

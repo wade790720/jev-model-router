@@ -109,6 +109,19 @@ export function createRouter() {
     return node;
   }
 
+  // The orb icon names the badge's source; its alt keeps the product name for screen readers.
+  // After an extension reload chrome.runtime.getURL is gone, so fall back to the name as text.
+  function brandMark(): Node {
+    let src: string | undefined;
+    try { src = globalThis.chrome?.runtime?.getURL?.("icons/icon-32.png"); } catch { /* orphaned script */ }
+    if (!src) return document.createTextNode(`${t("productName")} · `);
+    const icon = document.createElement("img");
+    icon.className = "jev-alert-icon";
+    icon.src = src;
+    icon.alt = t("productName");
+    return icon;
+  }
+
   function positionBadge() {
     if (!state.composer || !state.badge?.isConnected) return;
     const rect = (state.composer.closest("form") ?? state.composer).getBoundingClientRect();
@@ -130,7 +143,7 @@ export function createRouter() {
     light.setAttribute("aria-hidden", "true");
     const titleText = document.createElement("span");
     titleText.className = "jev-alert-status";
-    titleText.textContent = `JEV · ${message}`;
+    titleText.append(brandMark(), message);
     const settings = document.createElement("button");
     settings.type = "button";
     settings.className = "jev-alert-action";

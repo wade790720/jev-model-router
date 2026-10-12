@@ -60,6 +60,16 @@ test("settings bundle the shared brand tokens and status palette locally and nev
   expect(manifest.content_scripts[0].js).toEqual(["content.js"]);
 });
 
+test("the orb icon is the toolbar and store icon; ChatGPT may load only the two badge sizes", () => {
+  const sizes = { 16: "icons/icon-16.png", 32: "icons/icon-32.png", 48: "icons/icon-48.png" };
+  expect(manifest.icons).toEqual({ ...sizes, 128: "icons/icon-128.png" });
+  expect(manifest.action.default_icon).toEqual(sizes);
+  expect(manifest.web_accessible_resources).toEqual([
+    { resources: ["icons/icon-32.png", "icons/icon-48.png"], matches: ["https://chatgpt.com/*"] }
+  ]);
+  expect(renderToStaticMarkup(<App />)).toMatch(/<img src="\/icons\/icon-48.png" alt=""/);
+});
+
 test("press feedback respects reduced motion", () => {
   expect(read("src/components/ui/button.tsx")).toMatch(/motion-safe:active/);
 });

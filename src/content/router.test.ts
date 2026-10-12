@@ -8,11 +8,15 @@ const source = readFileSync(new URL("./router.ts", import.meta.url), "utf8");
 const css = readFileSync(new URL("../../public/content.css", import.meta.url), "utf8");
 const at = { closest: () => ({ getBoundingClientRect: () => ({ top: 200, right: 450 }) }) };
 
+// textContent follows the DOM: set directly, or joined from appended children (an <img> adds nothing).
 function element(offsetHeight = 60): any {
   return { children: [], style: {}, dataset: {}, isConnected: false, offsetHeight, listeners: {} as Record<string, () => void>,
     setAttribute() {}, addEventListener(type: string, fn: () => void) { this.listeners[type] = fn; },
-    append(...nodes: unknown[]) { this.children.push(...nodes); }, replaceChildren() { this.children = []; } };
+    append(...nodes: unknown[]) { this.children.push(...nodes); }, replaceChildren() { this.children = []; },
+    get textContent(): string { return this.ownText ?? this.children.map((c: any) => typeof c === "string" ? c : "alt" in c ? "" : c.textContent ?? "").join(""); },
+    set textContent(value: string) { this.ownText = value; } };
 }
+const iconUrl = (path: string) => `chrome-extension://test/${path}`;
 
 function setup({ document = {}, runtime, language = "zh-TW", offsetHeight }: {
   document?: Record<string, unknown>; runtime?: unknown; language?: string; offsetHeight?: number;
@@ -20,7 +24,7 @@ function setup({ document = {}, runtime, language = "zh-TW", offsetHeight }: {
   vi.useFakeTimers();
   const handlers: Record<string, (event: any) => void> = {};
   vi.stubGlobal("document", { addEventListener: (type: string, handler: (event: any) => void) => { handlers[type] = handler; },
-    querySelectorAll: () => [], createElement: () => element(offsetHeight), body: { appendChild(node: any) { node.isConnected = true; } }, ...document });
+    querySelectorAll: () => [], createElement: () => element(offsetHeight), createTextNode: (value: string) => ({ textContent: value }), body: { appendChild(node: any) { node.isConnected = true; } }, ...document });
   vi.stubGlobal("window", { innerWidth: 500 });
   vi.stubGlobal("getComputedStyle", () => ({ visibility: "visible" }));
   vi.stubGlobal("HTMLTextAreaElement", class {});
@@ -71,7 +75,7 @@ test("draft text keeps code indentation and line breaks for Jev", () => {
 });
 
 test("Alert is right-aligned and renders only the returned top choices", () => {
-  const { show, state } = setup({ runtime: { sendMessage() {} }, offsetHeight: 80 });
+  const { show, state } = setup({ runtime: { sendMessage() {}, getURL: iconUrl }, offsetHeight: 80 });
   state.composer = at;
   state.text = "請分析";
   show("建議使用 High", "success", [{ mode: "high", probability: 0.7 }, { mode: "medium", probability: 0.3 }]);
@@ -79,7 +83,10 @@ test("Alert is right-aligned and renders only the returned top choices", () => {
   expect(state.badge.style.right).toBe("50px");
   expect(state.badge.style.top).toBe("112px");
   expect(state.badge.children).toHaveLength(2);
-  expect(text(state.badge, 1)).toBe("JEV · 建議使用 High");
+  expect(text(state.badge, 1)).toBe("建議使用 High");
+  const icon = state.badge.children[0].children[1].children[0];
+  expect(icon.src).toBe("chrome-extension://test/icons/icon-32.png");
+  expect(icon.alt, "the icon keeps the product name for screen readers").toBe("ChatGPT 模型選擇器");
   expect(state.badge.children[1].children).toHaveLength(2);
   expect(state.badge.children[1].children[0].children[1].textContent).toBe("70%");
 });
@@ -98,16 +105,25 @@ test("the 200px alert wraps long status text instead of truncating it", () => {
 });
 
 test("Alert follows the browser UI language", () => {
-  const { show, state } = setup({ runtime: { sendMessage() {} }, language: "en-US" });
+  const { show, state } = setup({ runtime: { sendMessage() {}, getURL: iconUrl }, language: "en-US" });
   state.composer = at;
   state.text = "Hello";
   show("Suggested: Instant", "success", []);
   expect(state.badge.lang).toBe("en");
-  expect(text(state.badge, 1)).toBe("JEV · Suggested: Instant");
+  expect(text(state.badge, 1)).toBe("Suggested: Instant");
+  expect(state.badge.children[0].children[1].children[0].alt).toBe("Model Picker for ChatGPT");
   expect(text(state.badge, 2)).toBe("Settings");
 });
 
-const modeGroup = (labels: [string, string], pressed: [string, string]) => ({ querySelectorAll: () =>
+test("without chrome.runtime (after a reload) the badge still names the product in text", () => {
+  const { show, state } = setup({ runtime: undefined });
+  state.composer = at;
+  state.text = "Hello";
+  show("建議使用 High", "success", []);
+  expect(text(state.badge, 1)).toBe("ChatGPT 模型選擇器 · 建議使用 High");
+});
+
+const modeGroup =(labels: [string, string], pressed: [string, string]) => ({ querySelectorAll: () =>
   labels.map((innerText, index) => ({ innerText, getAttribute: () => pressed[index] })) });
 
 test("Work mode detection does not depend on translated button labels", () => {

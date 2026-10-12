@@ -32,6 +32,16 @@
   overflow-wrap: anywhere;
   white-space: normal;
 }
+/* Orb icon in place of the old "JEV ·" text prefix. ChatGPT's own img rules must not resize it. */
+#jev-model-router-badge .jev-alert-icon {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  max-width: none;
+  margin: 0 6px 0 0;
+  border-radius: 4px;
+  vertical-align: -3px;
+}
 #jev-model-router-badge .jev-status-light {
   flex: none;
   width: 9px;
