@@ -35,7 +35,7 @@ test("toolbar popup uses an intrinsic width while settings remain responsive", (
   expect(css).toMatch(/width: min\(360px, 100vw\)/);
 });
 
-test("no permission to reach arbitrary sites now that the hosted service is gone", () => {
+test("permissions stay minimal: no local diagnostics, no arbitrary sites, and Skool cookies for hosted sign-in", () => {
   // Local diagnostics are gone: nothing talks to the developer's machine any more.
   expect(manifest.host_permissions).not.toContain("http://127.0.0.1/*");
   expect(manifest.permissions).not.toContain("alarms");
