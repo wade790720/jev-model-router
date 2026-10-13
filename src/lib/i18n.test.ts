@@ -40,9 +40,10 @@ test("product branding follows the browser language in the popup and manifest", 
     expect(messages.productDescription.message.length).toBeGreaterThan(0);
     expect(messages.productDescription.message.length).toBeLessThanOrEqual(132);
   }
-  expect(json("_locales/zh_TW/messages.json").productDescription.message).toBe("根據輸入內容推薦適合的 ChatGPT 模型，由 TypeSafe AI Jev 提供判斷；僅提供提示，模型由你自行切換。百寶袋俱樂部會員專用。");
-  expect(json("_locales/zh_CN/messages.json").productDescription.message).toBe("根据输入内容推荐适合的 ChatGPT 模型，由 TypeSafe AI Jev 提供判断；仅提供提示，模型由你自行切换。百宝袋俱乐部会员专用。");
-  expect(json("_locales/en/messages.json").productDescription.message).toMatch(/For Wonder Pocket Club members\.$/);
+  expect(json("_locales/zh_TW/messages.json").productDescription.message).toBe("根據輸入內容推薦適合的 ChatGPT 模型，由 TypeSafe AI Jev 提供判斷；僅提供提示，模型由你自行切換，提供給百寶袋俱樂部會員專用。");
+  expect(json("_locales/zh_CN/messages.json").productDescription.message).toBe("根据输入内容推荐适合的 ChatGPT 模型，由 TypeSafe AI Jev 提供判断；仅提供提示，模型由您自行切换，专供百宝袋俱乐部会员使用。");
+  // Exactly 132 characters, the store's limit for the short description.
+  expect(json("_locales/en/messages.json").productDescription.message).toBe("Suggests the best ChatGPT model for your text via TypeSafe AI Jev. Guidance only; you switch models. For Wonder Pocket Club members.");
 });
 
 test("an orphaned content script without chrome.* still gets text", () => {

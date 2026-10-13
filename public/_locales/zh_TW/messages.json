@@ -3,6 +3,6 @@
     "message": "ChatGPT 模型選擇器"
   },
   "productDescription": {
-    "message": "根據輸入內容推薦適合的 ChatGPT 模型，由 TypeSafe AI Jev 提供判斷；僅提供提示，模型由你自行切換。百寶袋俱樂部會員專用。"
+    "message": "根據輸入內容推薦適合的 ChatGPT 模型，由 TypeSafe AI Jev 提供判斷；僅提供提示，模型由你自行切換，提供給百寶袋俱樂部會員專用。"
   }
 }
