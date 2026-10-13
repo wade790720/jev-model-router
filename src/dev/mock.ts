@@ -3,7 +3,8 @@ const store: Record<string, unknown> = {};
 
 Object.assign(globalThis, {
   chrome: {
-    i18n: { getUILanguage: () => navigator.language },
+    // ?lang=en-US (or ja, ko, zh-CN…) previews another language without changing the browser.
+    i18n: { getUILanguage: () => new URLSearchParams(location.search).get("lang") ?? navigator.language },
     storage: { local: {
       get: async (keys: string[]) => Object.fromEntries(keys.map(key => [key, store[key]])),
       set: async (values: Record<string, unknown>) => { Object.assign(store, values); }

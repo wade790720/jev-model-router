@@ -11,10 +11,21 @@ afterEach(() => vi.unstubAllGlobals());
 
 test("the own TypeSafe key is the only setting: no hosted service, test access or diagnostics", () => {
   const html = renderToStaticMarkup(<App />);
-  expect(html).toMatch(/<section[^>]*id="advanced"/);
   expect(html).toMatch(/id="typeSafeKey"/);
-  expect(html).not.toMatch(/id="(subscriptionFields|usePersonalKey|activationCode|diagnosticsEnabled|exportDiagnostics)"|<details/);
+  expect(html).not.toMatch(/id="(subscriptionFields|usePersonalKey|activationCode|diagnosticsEnabled|exportDiagnostics)"/);
   expect(html).toMatch(/id="consentNote"/);
+});
+
+test("intro and data notice stay visible; key, save and error reporting fold under advanced settings", () => {
+  const html = renderToStaticMarkup(<App />);
+  const advanced = html.search(/<details[^>]*id="advanced"/);
+  expect(advanced, "advanced settings is a <details> below the intro").toBeGreaterThan(-1);
+  expect(html).not.toMatch(/<details[^>]*\sopen/);
+  expect(html.indexOf('id="consentNote"')).toBeLessThan(advanced);
+  for (const id of ["typeSafeKey", "save", "status"]) expect(html.indexOf(`id="${id}"`)).toBeGreaterThan(advanced);
+  expect(html).not.toContain("僅文字");
+  expect(html).toContain("分析 ChatGPT 文字草稿，並選擇最優解模型；\n僅對輸入的文字做分析，無法分析圖片與附件。");
+  expect(html).toContain("輸入停止後，文字會傳送至 TypeSafe 由 Jev AI 模型判斷，不自動切換模型，由使用者自行選擇。");
 });
 
 test("field help is associated and status is a polite live region", () => {
