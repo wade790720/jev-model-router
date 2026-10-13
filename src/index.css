@@ -1,8 +1,14 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-/* Shared brand tokens (copy of Documents/Codex/brand-guidelines/brand.css). Change colors there, not here.
+/* Shared brand tokens (copy of Documents/Codex/brand-guidelines/brand.css): layout, spacing, type and
+   neutrals change there, not here. Only the accent is per product, overridden right below.
    Settings pages only; never injected into ChatGPT. */
 @import "./brand.css";
+
+/* Accent matching this product's ice-blue orb icon (Radix cyan), in place of the brand's violet.
+   White on #107d98 is 4.8:1; #0b6b84 text is 5.3:1 or more on light surfaces; #4ccce6 is 8.4:1 or more on dark ones. */
+:root { --primary: #107d98; --ring: #107d98; --primary-text: #0b6b84; }
+.dark { --ring: #4ccce6; --primary-text: #4ccce6; }
 /* Status colors only (DESIGN.md): Radix green/amber/red, light on :root, dark on .dark.
    MIT licensed, see public/RADIX-LICENSE.txt. */
 @import "@radix-ui/colors/green.css";

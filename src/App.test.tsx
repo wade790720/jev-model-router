@@ -49,6 +49,9 @@ test("permissions stay minimal: no local diagnostics, no arbitrary sites, and Sk
 test("settings bundle the shared brand tokens and status palette locally and never leak them into ChatGPT", () => {
   expect(css).toContain(`@import "./brand.css";`);
   expect(read("src/brand.css")).toMatch(/--primary: #6e56cf;/);
+  // The accent follows this product's ice-blue orb icon: index.css overrides the brand violet after importing it.
+  expect(css.indexOf("--primary: #107d98")).toBeGreaterThan(css.indexOf(`@import "./brand.css";`));
+  expect(css).toMatch(/\.dark \{ --ring: #4ccce6; --primary-text: #4ccce6; \}/);
   for (const scale of ["green", "amber", "red"]) {
     expect(css).toContain(`@import "@radix-ui/colors/${scale}.css";`);
     expect(css).toContain(`@import "@radix-ui/colors/${scale}-dark.css";`);

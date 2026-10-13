@@ -4,7 +4,7 @@ This file describes the existing product UI, not a new brand or a replacement fo
 
 ## Surface and intent
 
-The popup, settings page and inline routing notice are **Operate** surfaces: users configure access or confirm routing status, then return to their draft. Preserve the compact neutral visual world, violet primary action, shared brand typography and host-aware notice. Do not add marketing imagery, remotely loaded fonts, animation libraries or decorative entrance effects.
+The popup, settings page and inline routing notice are **Operate** surfaces: users configure access or confirm routing status, then return to their draft. Preserve the compact neutral visual world, cyan primary action (matching the orb icon), shared brand typography and host-aware notice. Do not add marketing imagery, remotely loaded fonts, animation libraries or decorative entrance effects.
 
 ## Source of truth
 
@@ -22,11 +22,11 @@ Shared brand pack for this maintainer lives outside this repository at `C:/Users
 
 - Toolbar popup: intrinsic 360px width and 20px padding, fixed by `data-view="popup"` on `popup.html`'s `<html>`, so it applies before any script runs. Never cap native popup width with `100vw`: Chrome derives the viewport from the content, creating a circular shrink loop. The full settings page keeps its responsive 360px viewport cap, up to 440px with 26px padding on wide screens.
 - Light/dark settings follow the system. Embedded notice follows the host's effective theme.
-- Settings palette: shared brand tokens v0.2.0 (Linear-style neutral grays, one violet accent). The accent is an interim cross-product value, not a finalized Sai identity or logo asset. Product names remain unchanged.
-- Primary accent: `#6e56cf` (Radix violet9). The shared Button darkens it on hover (12% black) to keep white text above 4.5:1. The S mark uses the shared `brand-mark` utility: a matte accent tile, a product placeholder.
+- Settings palette: shared brand tokens v0.2.0 (Linear-style neutral grays, one accent). Layout, spacing and type match the other owned products; only the accent differs, following each product's orb icon. Its violet default is Sai's.
+- Primary accent: `#107d98` (Radix cyan, ice-blue like the orb icon), overridden in `src/index.css`. White text on it is 4.8:1; the shared Button darkens it on hover (12% black). Accent text uses `--primary-text` `#0b6b84` (light) / `#4ccce6` (dark). The header shows the orb icon (`public/icons/icon-48.png`).
 - Canvas, surface and text come from the brand tokens. Passive borders are the brand hairline; form controls override `--input` with Radix mauve9 for a 3:1 boundary.
 - Success/error messages use green/red steps 3/7/12, with step 12 text chosen for stronger contrast on the tinted background. Color always accompanies text.
-- Focus rings and selected indicators use `--ring`: the accent in light mode, a lighter violet (`#baa7ff`) in dark mode, to keep contrast against dark surfaces.
+- Focus rings and selected indicators use `--ring`: the accent in light mode, a lighter cyan (`#4ccce6`) in dark mode, to keep contrast against dark surfaces.
 - `src/index.css` imports `./brand.css` and the Radix `green`/`amber`/`red` scales; Vite bundles them and the Inter font files; no CDN. They are loaded only by the settings pages, never injected into ChatGPT. Keep `public/RADIX-LICENSE.txt` in the shipped extension.
 - Product overrides stay limited to `--input` and `--raised`. To change a shared color, edit `brand.css` in the shared pack, then copy it to every product.
 - Inter Variable (bundled), weights 400–600, no 700: 14px base, 17px product heading, 13px field labels, 12px help and status text.
