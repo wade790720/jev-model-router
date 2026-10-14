@@ -35,7 +35,7 @@ Shared brand pack for this maintainer lives outside this repository at `C:/Users
 - The hosted service is the default and has no section of its own. The intro and the data-flow notice (`consentNote`) stay visible under the header; there is no "text only" chip. Below a divider, a collapsed `<details>` "Advanced settings" holds the optional TypeSafe API key, the save button, its status and error reporting: a saved key routes drafts straight to TypeSafe, an empty one keeps the hosted service. No login, subscription or test-access UI; Skool membership is checked by `MembershipGate` before the page shows. The diagnostics panel is gone.
 - Draft analysis runs by default; no separate consent checkbox. Preserve the visible disclosure of text transmission.
 - Primary save action dominates. The shared `ReportProblem` controls (report button and the automatic error-report switch, on by default) sit small under it.
-- Embedded notice stays 200px maximum, right-aligned with the composer. Status text wraps; probability values never shrink. Truncated model names expose the full name through their title.
+- Embedded notice stays 200px maximum, right-aligned with the composer. Status text wraps; probability values never shrink. Truncated model names expose the full name through their title. No settings button: settings open from the toolbar popup.
 
 ## Interaction rules
 

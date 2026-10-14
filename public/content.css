@@ -70,22 +70,6 @@
 #jev-model-router-badge[data-kind="error"] {
   border-color: color-mix(in srgb, var(--jev-border) 45%, #dc2626 55%);
 }
-#jev-model-router-badge .jev-alert-action {
-  flex: none;
-  margin-left: auto;
-  border: 0;
-  min-height: 24px;
-  padding: 3px 4px;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--jev-muted);
-  font: inherit;
-  font-weight: 400;
-  cursor: pointer;
-}
-#jev-model-router-badge .jev-alert-action:hover { color: var(--jev-text); text-decoration: underline; }
-#jev-model-router-badge .jev-alert-action:focus-visible { outline: 2px solid var(--jev-text); outline-offset: 2px; }
-#jev-model-router-badge .jev-alert-action:active { background: color-mix(in srgb, var(--jev-text) 10%, transparent); }
 #jev-model-router-badge .jev-probabilities {
   display: grid;
   gap: 1px;

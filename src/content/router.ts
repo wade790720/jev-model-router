@@ -144,18 +144,8 @@ export function createRouter() {
     const titleText = document.createElement("span");
     titleText.className = "jev-alert-status";
     titleText.append(brandMark(), message);
-    const settings = document.createElement("button");
-    settings.type = "button";
-    settings.className = "jev-alert-action";
-    settings.textContent = t("settings");
-    settings.setAttribute("aria-label", t("settingsAria"));
-    settings.disabled = state.disconnected;
-    settings.addEventListener("click", () => {
-      sendRuntime({ type: "JEV_OPEN_OPTIONS" }).catch(() => {
-        if (!state.disconnected) show(t("settingsUnavailable"), "warning");
-      });
-    });
-    title.append(light, titleText, settings);
+    // No settings button: settings open from the toolbar popup.
+    title.append(light, titleText);
     node.append(title);
     if (choices?.length) {
       const list = document.createElement("div");

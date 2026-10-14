@@ -10,13 +10,13 @@ test("uses browser UI language for Traditional and Simplified Chinese", () => {
   as("zh-TW"); expect(locale()).toBe("zh-Hant");
   as("zh-HK"); expect(t("switched", { model: "Instant" })).toBe("已切換");
   as("zh-CN"); expect(locale()).toBe("zh-Hans");
-  expect(t("settings")).toBe("设置");
+  expect(t("analyzing")).toBe("分析中…");
 });
 
 test("localizes English, Japanese, Korean and falls back to English", () => {
   as("en-US"); expect(t("switched", { model: "Instant" })).toBe("Switched");
-  as("ja-JP"); expect(t("settings")).toBe("設定");
-  as("ko-KR"); expect(t("settings")).toBe("설정");
+  as("ja-JP"); expect(t("recommendation", { model: "High" })).toBe("候補: High");
+  as("ko-KR"); expect(t("analyzing")).toBe("분석 중…");
   as("fr-FR"); expect(locale()).toBe("en");
 });
 

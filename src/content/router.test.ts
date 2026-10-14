@@ -100,8 +100,12 @@ test("the 200px alert wraps long status text instead of truncating it", () => {
   expect(source).toMatch(/node\.setAttribute\("role", "status"\)/);
   expect(source).toMatch(/node\.setAttribute\("aria-atomic", "true"\)/);
   expect(source).toMatch(/name\.title = name\.textContent/);
-  expect(css).toMatch(/\.jev-alert-action:focus-visible/);
   expect(css).toMatch(/\.jev-probability strong\s*\{[^}]*flex:\s*none/);
+});
+
+test("the badge has no settings button: settings open from the toolbar popup", () => {
+  expect(source).not.toMatch(/jev-alert-action|JEV_OPEN_OPTIONS|settingsAria|settingsUnavailable/);
+  expect(css).not.toMatch(/jev-alert-action/);
 });
 
 test("Alert follows the browser UI language", () => {
@@ -112,7 +116,7 @@ test("Alert follows the browser UI language", () => {
   expect(state.badge.lang).toBe("en");
   expect(text(state.badge, 1)).toBe("Suggested: Instant");
   expect(state.badge.children[0].children[1].children[0].alt).toBe("Model Picker for ChatGPT");
-  expect(text(state.badge, 2)).toBe("Settings");
+  expect(state.badge.children[0].children, "status light and text only").toHaveLength(2);
 });
 
 test("without chrome.runtime (after a reload) the badge still names the product in text", () => {
@@ -220,17 +224,13 @@ function orphan(runtime: Record<string, any>) {
   return { ...api, cleared, chrome: (globalThis as any).chrome };
 }
 
-test("old Alert settings button handles a missing runtime without uncaught errors", async () => {
-  const { show, state, cleared, chrome } = orphan({ sendMessage() {} });
-  show("Ready", "success");
-  const oldButton = state.badge.children[0].children[2];
+test("a missing runtime mid-draft stops the script and asks for a page refresh", async () => {
+  const { sendRuntime, state, cleared, chrome } = orphan({ sendMessage() {} });
   chrome.runtime = undefined;
-  expect(() => oldButton.listeners.click()).not.toThrow();
-  await Promise.resolve();
+  await expect(sendRuntime({ type: "JEV_ROUTE" })).rejects.toThrow(/invalidated/);
   expect(state.disconnected).toBe(true);
   expect(cleared).toHaveBeenCalledWith(state.pollTimer);
   expect(text(state.badge, 1)).toMatch(/重新整理/);
-  expect(state.badge.children[0].children[2].disabled).toBe(true);
 });
 
 test("sendMessage throwing Extension context invalidated stops the orphaned script", async () => {

@@ -1,4 +1,4 @@
-// Service worker: routes drafts for the content script and opens settings.
+// Service worker: routes drafts for the content script.
 import { routeDraft, type CodedError } from "@/lib/route-draft";
 
 function errorCode(error: CodedError) {
@@ -15,9 +15,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       .catch((error: CodedError) => sendResponse({ ok: false,
         error: error.name === "AbortError" ? "JEV 回應逾時" : error.message, code: errorCode(error) }));
     return true;
-  }
-  if (message?.type === "JEV_OPEN_OPTIONS") {
-    chrome.runtime.openOptionsPage();
   }
   return false;
 });
