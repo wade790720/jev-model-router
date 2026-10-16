@@ -76,7 +76,7 @@ npx wrangler@latest deploy
 託管服務是預設；進階設定填了自己的 TypeSafe API key 時改為直連 TypeSafe。
 
 1. 擴充功能（背景程式）沒有有效憑證時，用 `chrome.cookies` 讀取這個瀏覽器的 skool.com cookie，POST 到 `/api/session`。
-2. Worker（`worker/src/session.ts`）帶著這些 cookie 讀取 `https://www.skool.com/forge-1085/about`，從 `__NEXT_DATA__` 確認 `self.member.groupId` 與角色（member、group-admin）。
+2. Worker（`worker/src/session.ts`）帶著這些 cookie 讀取 `https://www.skool.com/wonderpocket/about`（舊網址 `/forge-1085/about` 當備援），從 `__NEXT_DATA__` 確認 `self.member.groupId` 與角色（member、group-admin）。
 3. 是會員：以 Skool 使用者 ID 的 HMAC 為 `member_hash`，發 24 小時的 session token；不是會員回 403。
 4. cookie 只用於這一次請求，不儲存、不記錄。每個 IP 每分鐘最多 10 次。
 5. 託管服務回 401/403 時，擴充功能重新驗證一次。會員退出社群後，最晚 24 小時內失效。

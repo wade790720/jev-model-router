@@ -5,7 +5,10 @@ import { reserveRequest, sha256, utcWindows, type Env } from "./index";
 // The cookies are used for that one request only: never stored, never logged.
 // Same membership rule as src/lib/membership.ts (group id + role whitelist), repeated here because
 // the server cannot trust the extension's own answer.
-const COMMUNITY_URL = "https://www.skool.com/forge-1085/about";
+// The community moves from /forge-1085 to /wonderpocket. Try the new address first and keep the old one,
+// so sign-in works before, during and after the rename, whether or not Skool redirects.
+// ponytail: drop the old address once the rename has been live for a while.
+const COMMUNITY_PAGES = ["https://www.skool.com/wonderpocket/about", "https://www.skool.com/forge-1085/about"];
 const GROUP_ID = "998361e5ef944ec4a6937379dd581002";
 const ROLES = ["member", "group-admin"];
 const SESSION_SECONDS = 86400;
@@ -35,14 +38,18 @@ export async function createSession(request: Request, env: Env) {
   const cookie = (() => { try { return JSON.parse(raw)?.cookie; } catch { return null; } })();
   if (typeof cookie !== "string" || !cookie.trim() || /[\r\n]/.test(cookie)) return json({ error: "請先登入 Skool" }, 400);
 
-  let id: string | null;
-  try {
-    const page = await fetch(COMMUNITY_URL, { headers: { cookie, "user-agent": "Mozilla/5.0 (compatible; SmartChatGPT/1.0)" } });
-    if (!page.ok) return json({ error: `Skool ${page.status}` }, 502);
-    id = memberId(await page.text());
-  } catch {
-    return json({ error: "暫時無法確認 Skool 會員身分" }, 502);
+  // A member on either page is a member. "Not a member" only when a page answered and none said member.
+  let id: string | null = null, answered = false, lastError = "暫時無法確認 Skool 會員身分";
+  for (const url of COMMUNITY_PAGES) {
+    try {
+      const page = await fetch(url, { headers: { cookie, "user-agent": "Mozilla/5.0 (compatible; SmartChatGPT/1.0)" } });
+      if (!page.ok) { lastError = `Skool ${page.status}`; continue; }
+      id = memberId(await page.text());
+      answered = true;
+      if (id) break;
+    } catch { /* try the next address */ }
   }
+  if (!id && !answered) return json({ error: lastError }, 502);
   if (!id) return json({ error: "不是百寶袋俱樂部會員，或尚未登入 Skool" }, 403);
 
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(env.MEMBER_HASH_SECRET), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);

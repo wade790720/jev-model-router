@@ -40,6 +40,16 @@ function setup(skoolPage: string, status = 200) {
 }
 afterEach(() => vi.restoreAllMocks());
 
+test("during the Skool rename, a member is found on the old address when the new one is missing", async () => {
+  const { calls, session } = setup(member());
+  vi.mocked(fetch).mockImplementation(async (input) => {
+    calls.push({ url: String(input) });
+    return String(input).includes("/wonderpocket/") ? new Response("not found", { status: 404 }) : new Response(member());
+  });
+  expect((await session({ cookie: "session=fake" })).status).toBe(200);
+  expect(calls.map(c => c.url)).toEqual(["https://www.skool.com/wonderpocket/about", "https://www.skool.com/forge-1085/about"]);
+});
+
 test("a Skool member gets a 24-hour token that the hosted route accepts", async () => {
   const { db, env, calls, session } = setup(member());
   const response = await session({ cookie: "session=fake" });
@@ -47,7 +57,7 @@ test("a Skool member gets a 24-hour token that the hosted route accepts", async 
   const { token, expiresAt } = await response.json() as { token: string; expiresAt: number };
   expect(token).toMatch(/^jmr_[0-9a-f]{64}$/);
   expect(expiresAt - Math.floor(Date.now() / 1000)).toBeGreaterThan(86000);
-  expect(calls[0]).toEqual({ url: "https://www.skool.com/forge-1085/about", cookie: "session=fake" });
+  expect(calls[0]).toEqual({ url: "https://www.skool.com/wonderpocket/about", cookie: "session=fake" });
   // The cookie is never kept.
   expect(JSON.stringify(db.sql.prepare("SELECT * FROM members").all())).not.toContain("fake");
   const routed = await worker.fetch(new Request("https://router.example/api/route", {
