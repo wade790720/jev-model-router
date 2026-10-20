@@ -238,17 +238,15 @@ export function createRouter() {
 
   function routingFailure(code: string): { message: string; kind: Kind } {
     const messages: Record<string, MessageKey> = {
-      routing_consent: "routeConsent",
       routing_key_missing: "routeKeyMissing",
-      routing_service_unconfigured: "routeServiceNotReady",
-      routing_membership_missing: "routeMembershipMissing",
       routing_auth: "routeAuth",
       routing_rate_limit: "routeRateLimit",
       routing_timeout: "routeTimeout",
       routing_network: "routeNetwork",
       routing_invalid: "routeInvalid"
     };
-    const setup = ["routing_consent", "routing_key_missing", "routing_service_unconfigured", "routing_membership_missing"].includes(code);
+    // Setup problems (no key yet) are amber: the user can fix them, nothing failed.
+    const setup = code === "routing_key_missing";
     return { message: t(messages[code] ?? "routeFailed"), kind: setup ? "warning" : "error" };
   }
 

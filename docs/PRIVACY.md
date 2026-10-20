@@ -1,14 +1,11 @@
-# 0.3 資料處理說明（仍非正式發布政策）
+# 0.5 資料處理說明
 
-- 接入設定完成且擴充功能啟用時，預設在輸入停頓約 950ms 後分析目前文字草稿；不另設同意勾選框，不需按 ChatGPT 送出。設定頁保留資料流向說明；停用擴充功能可停止後續分析。不讀取聊天歷史、附件、圖片。
-- 自備 Key：草稿直接傳至 TypeSafe；Key 存在瀏覽器 `storage.local`，不是加密保險箱。
-- 託管：草稿與 session token 經 Cloudflare Worker 轉至 TypeSafe；程式不將全文寫入 D1 或刻意記錄應用日誌。平台與 TypeSafe 仍依各自政策處理請求。
-- 新 Skool 入口：內部管理者以已核對會員的 email 設定資格。Worker 只儲存 email 的 keyed HMAC、有效狀態、資格期限、更新時間；不儲存姓名或明文 email。email 仍會經網路到達 Worker，不可稱完全匿名。
-- session 僅存 token 的 SHA-256 雜湊與期限；member valid_until 和 session expires_at 每次推薦均檢查。過期 session 由排程清理，七天前用量窗口清理。
-- 舊 Stripe licenses 表不自動刪除，也不由新 Worker 入口使用。新入口沒有付款資訊處理、Stripe 路由或 Skool 密碼收集。
-- 目前 email 登入／寄信與 Skool 自動同步尚未完成。不得公開收費發布；須先驗證新會員、取消、到期、同步中斷與資料刪除流程。
-- 正式發布前補實際營運者、聯絡方式、會員與診斷保存期限、刪除／查詢方法、Cloudflare／TypeSafe／Skool 政策連結與寄信服務資料處理說明。
+對外的隱私權政策見根目錄的 [PRIVACY.md](../PRIVACY.md)。這份是給維護者的實作對照。
 
-## Skool 會員驗證（託管服務）
-
-使用託管服務時，擴充功能會把瀏覽器中 skool.com 的 cookie 送到 router.tekuei.com，伺服器只用它向 Skool 確認你是否為百寶袋俱樂部會員，確認後立即丟棄，不儲存、不記錄。伺服器只保留 Skool 使用者 ID 的雜湊值與 24 小時的使用憑證。在進階設定填入自己的 TypeSafe API key 時，不會送出任何 Skool cookie。
+- **金鑰**：使用者自己的 TypeSafe API 金鑰存在 `chrome.storage.local` 的 `typeSafeKey`，不是加密保險箱。只送到 `api.typesafe.ai`。
+- **驗證**：「驗證並儲存」會呼叫 `GET https://api.typesafe.ai/v1/models`（`src/lib/settings.ts`），只帶金鑰，不帶文字，不花額度。
+- **草稿**：輸入停頓約 950ms 後，目前的文字草稿由 service worker 直接送到 `https://api.typesafe.ai/v1/systemone`（`src/lib/route-draft.ts`）。不讀取聊天歷史、附件、圖片。沒有金鑰就不送。
+- **引導進度**：第一次成功產生建議時，在 `chrome.storage.local` 記下 `firstSuggestionAt`（毫秒時間戳），只用來完成設定頁的第 3 步。
+- **錯誤報告**：`src/lib/error-log.ts`，送到 `https://router.tekuei.com/api/errors`。這是 text/plain 的簡單請求（`mode: "no-cors"`），不需要 host permission。內容規則見該檔註解；使用者可在設定頁關閉。
+- **沒有的東西**：沒有託管服務、沒有 cookie 權限、沒有 Skool 會員檢查、沒有本機診斷。權限只有 `storage`、`https://chatgpt.com/*`、`https://api.typesafe.ai/*`。
+- `worker/` 伺服器另行處理；擴充功能 0.5 起只用到它的錯誤收件匣。

@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { App } from "./App";
@@ -6,35 +6,62 @@ import { App } from "./App";
 const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 const manifest = JSON.parse(read("public/manifest.json"));
 const css = read("src/index.css");
+const render = (typeSafeKey: string, tried: boolean) => renderToStaticMarkup(<App initial={{ typeSafeKey, tried }} />);
 beforeEach(() => vi.stubGlobal("chrome", { i18n: { getUILanguage: () => "zh-TW" } }));
 afterEach(() => vi.unstubAllGlobals());
 
-test("the own TypeSafe key is the only setting: no hosted service, test access or diagnostics", () => {
-  const html = renderToStaticMarkup(<App />);
-  expect(html).toMatch(/id="typeSafeKey"/);
-  expect(html).not.toMatch(/id="(subscriptionFields|usePersonalKey|activationCode|diagnosticsEnabled|exportDiagnostics)"/);
-  expect(html).toMatch(/id="consentNote"/);
+test("first visit: step 1 links to the TypeSafe key page, step 2 takes the key, step 3 waits", () => {
+  const html = render("", false);
+  expect(html).toMatch(/id="onboarding"/);
+  expect(html).toContain('href="https://console.typesafe.ai/keys"');
+  expect(html).toMatch(/id="typeSafeKey"[^>]*aria-describedby="keyNote consentNote"/);
+  expect(html).toContain("驗證並儲存");
+  expect(html).toMatch(/<li class="flex gap-3 opacity-50"[^>]*>/); // step 3 is faded
+  expect(html).not.toContain('href="https://chatgpt.com/"');
+  expect(html.indexOf('id="consentNote"')).toBeLessThan(html.indexOf('id="onboarding"'));
 });
 
-test("intro and data notice stay visible; key, save and error reporting fold under advanced settings", () => {
-  const html = renderToStaticMarkup(<App />);
+test("key saved: steps 1 and 2 are checked, step 3 opens ChatGPT", () => {
+  const html = render("synthetic-key", false);
+  expect(html).toMatch(/id="onboarding"/);
+  expect(html.match(/aria-label="✓"/g)).toHaveLength(2);
+  expect(html).toContain('href="https://chatgpt.com/"');
+  expect(html).not.toMatch(/id="typeSafeKey"/);
+});
+
+test("after the first suggestion only the general settings remain, with the key folded away", () => {
+  const html = render("synthetic-key", true);
+  expect(html).not.toMatch(/id="onboarding"/);
   const advanced = html.search(/<details[^>]*id="advanced"/);
-  expect(advanced, "advanced settings is a <details> below the intro").toBeGreaterThan(-1);
+  expect(advanced).toBeGreaterThan(-1);
   expect(html).not.toMatch(/<details[^>]*\sopen/);
-  expect(html.indexOf('id="consentNote"')).toBeLessThan(advanced);
-  for (const id of ["typeSafeKey", "save", "status"]) expect(html.indexOf(`id="${id}"`)).toBeGreaterThan(advanced);
-  expect(html).not.toContain("僅文字");
-  expect(html).toContain("分析 ChatGPT 文字草稿，並選擇最優解模型；\n僅對輸入的文字做分析，無法分析圖片與附件。");
-  expect(html).toContain("輸入停止後，文字會傳送至 TypeSafe 由 Jev AI 模型判斷，不自動切換模型，由使用者自行選擇。");
-});
-
-test("field help is associated and status is a polite live region", () => {
-  const html = renderToStaticMarkup(<App />);
-  expect(html).toMatch(/id="typeSafeKey"[^>]*aria-describedby="personalNote consentNote"/);
+  expect(html.indexOf('id="typeSafeKey"')).toBeGreaterThan(advanced);
   const status = html.match(/<div[^>]*id="status"[^>]*>/)?.[0];
   expect(status).toContain('role="status"');
   expect(status).toContain('aria-atomic="true"');
-  expect(html).toContain("ChatGPT 模型選擇器");
+});
+
+test("the Wonder Pocket Club line sits at the bottom of every state, as a quiet ghost button", () => {
+  for (const html of [render("", false), render("synthetic-key", true)]) {
+    const club = html.slice(html.indexOf('id="club"'));
+    expect(club).toContain("想學更多 AI 工具的用法？百寶袋俱樂部有完整教學。");
+    expect(club).toContain('href="https://www.skool.com/wonderpocket/about"');
+    expect(club).toContain('data-variant="ghost"');
+    expect(club).toContain("看看百寶袋俱樂部");
+    expect(html.indexOf('id="club"')).toBeGreaterThan(html.indexOf('id="advanced"'));
+  }
+});
+
+test("free with your own key: no membership check, no hosted service, minimal permissions", () => {
+  expect(manifest.version).toBe("0.5.0");
+  expect(manifest.permissions).toEqual(["storage"]);
+  expect(manifest.host_permissions).toEqual(["https://chatgpt.com/*", "https://api.typesafe.ai/*"]);
+  expect(manifest.optional_host_permissions).toBeUndefined();
+  for (const file of ["src/lib/membership.ts", "src/lib/membership.test.ts", "src/components/MembershipGate.tsx"]) {
+    expect(existsSync(new URL(`../${file}`, import.meta.url)), file).toBe(false);
+  }
+  const code = ["src/main.tsx", "src/App.tsx", "src/background.ts", "src/lib/route-draft.ts"].map(read).join("\n");
+  expect(code).not.toMatch(/MembershipGate|chrome\.cookies|router\.tekuei\.com\/api\/(?:route|session)/);
 });
 
 test("toolbar popup uses an intrinsic width while settings remain responsive", () => {
@@ -44,17 +71,6 @@ test("toolbar popup uses an intrinsic width while settings remain responsive", (
   expect(read("options.html")).toMatch(/<html[^>]*data-view="settings"/);
   expect(css).toMatch(/html\[data-view="popup"\][^{]+\{\s*width: 360px; min-width: 360px;/);
   expect(css).toMatch(/width: min\(360px, 100vw\)/);
-});
-
-test("permissions stay minimal: no local diagnostics, no arbitrary sites, and Skool cookies for hosted sign-in", () => {
-  // Local diagnostics are gone: nothing talks to the developer's machine any more.
-  expect(manifest.host_permissions).not.toContain("http://127.0.0.1/*");
-  expect(manifest.permissions).not.toContain("alarms");
-  expect(manifest.optional_host_permissions).toBeUndefined();
-  // Skool keeps its sign-in cookie on .skool.com (shared with api2.skool.com): with only www.skool.com,
-  // chrome.cookies filters it out and the hosted sign-in sees a signed-out browser.
-  expect(manifest.host_permissions).toContain("https://*.skool.com/*");
-  expect(manifest.permissions).toContain("cookies");
 });
 
 test("settings bundle the shared brand tokens and status palette locally and never leak them into ChatGPT", () => {
@@ -81,7 +97,7 @@ test("the orb icon is the toolbar and store icon; ChatGPT may load only the two 
   expect(manifest.web_accessible_resources).toEqual([
     { resources: ["icons/icon-32.png", "icons/icon-48.png"], matches: ["https://chatgpt.com/*"] }
   ]);
-  expect(renderToStaticMarkup(<App />)).toMatch(/<img src="\/icons\/icon-48.png" alt=""/);
+  expect(render("", false)).toMatch(/<img src="\/icons\/icon-48.png" alt=""/);
 });
 
 test("press feedback respects reduced motion", () => {

@@ -37,16 +37,11 @@ afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(
 
 test("setup failures name the recovery rather than pretending the API failed", () => {
   const { routingFailure } = setup();
-  for (const [code, words] of [
-    ["routing_consent", "同意"], ["routing_key_missing", "TypeSafe API Key"],
-    ["routing_service_unconfigured", "尚未開通"], ["routing_membership_missing", "登入 Skool"]
-  ]) {
-    const result = routingFailure(code);
-    expect(result.kind).toBe("warning");
-    expect(result.message).toContain(words);
-  }
-  expect(routingFailure("routing_auth").message).toMatch(/驗證失敗/);
-  expect(routingFailure("routing_network").message).toMatch(/無法連線/);
+  const missing = routingFailure("routing_key_missing");
+  expect(missing.kind).toBe("warning");
+  expect(missing.message).toBe("先設定 TypeSafe API key：點工具列的圖示");
+  expect(routingFailure("routing_auth").message).toMatch(/不接受這把金鑰/);
+  expect(routingFailure("routing_network").message).toMatch(/連不上 TypeSafe/);
   expect(routingFailure("routing_timeout").kind).toBe("error");
 });
 

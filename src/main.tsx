@@ -18,5 +18,4 @@ const { locale, t } = await import("./lib/i18n");
 document.documentElement.lang = locale();
 document.title = t("optionsTitle");
 const { App } = await import("./App");
-const { MembershipGate } = await import("./components/MembershipGate");
-createRoot(document.getElementById("root")!).render(<StrictMode><MembershipGate><App /></MembershipGate></StrictMode>);
+createRoot(document.getElementById("root")!).render(<StrictMode><App /></StrictMode>);

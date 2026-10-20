@@ -2,7 +2,7 @@
 
 > Repo 名稱是 `jev-model-router`；Chrome Web Store 上的名稱是 **Model Picker for ChatGPT**。
 
-![version](https://img.shields.io/badge/version-0.4.0-blue)
+![version](https://img.shields.io/badge/version-0.5.0-blue)
 ![status](https://img.shields.io/badge/status-internal%20testing-orange)
 ![node](https://img.shields.io/badge/node-%3E%3D22.18-339933)
 ![stack](https://img.shields.io/badge/React%20%2B%20TypeScript%20%2B%20Vite-646CFF)
@@ -10,6 +10,7 @@
 
 這是一個 Chrome/Edge 擴充功能，它讀取 ChatGPT 輸入框的草稿。
 由 TypeSafe AI Jev 推薦模型與推理強度，只顯示建議，模型由使用者自己切換。
+免費使用，用你自己的 TypeSafe API 金鑰；沒有託管服務，不需要登入或會員。
 
 ## 目錄
 
@@ -53,14 +54,13 @@ npm run dev   # 用假資料開啟 http://localhost:5173/options.html，不需�
 ```
 
 ## 使用方式
-開啟擴充功能的設定頁，選一種接入方式：
+安裝後會自動打開設定頁，照三個步驟做：
 
-| 接入方式 | 誰持有 TypeSafe Key | 適用情況 |
-| --- | --- | --- |
-| 託管模式（預設） | Cloudflare Worker | 有會員憑證的使用者，正式會員登入尚未開通，目前只能用管理者核發的內部測試憑證。 |
-| 自備 Key 模式 | 你的瀏覽器 | 你有自己的 TypeSafe API Key，開啟「進階設定」，勾選「使用自己的 TypeSafe API Key」。 |
+1. 到 [TypeSafe 主控台的金鑰頁面](https://console.typesafe.ai/keys) 申請 API 金鑰。
+2. 把金鑰貼到設定頁，按「驗證並儲存」。擴充功能會先向 TypeSafe 確認金鑰可用（列出可用模型，不花額度），才會儲存。
+3. 到 ChatGPT 試一次。第一次出現建議後，引導完成，設定頁只剩一般設定。
 
-儲存設定後即可使用。
+金鑰只存在瀏覽器裡，只會送到 TypeSafe。沒有金鑰時，ChatGPT 頁面上的徽章會提示你先設定。
 
 ### 在 ChatGPT 使用
 
@@ -82,16 +82,17 @@ npm test         # 執行全部單元測試（vitest）
 npm run check    # TypeScript 型別檢查（擴充功能與 Worker）
 ```
 
-測試不使用真實 Key、會員資料或 ChatGPT 對話。
+測試不使用真實金鑰或 ChatGPT 對話。
 
 ## 架構
 
 ```text
 ChatGPT 輸入框 → content.js（debounce、IME 保護）→ background.js
-  ├ 託管模式 → Cloudflare Worker → 會員與 session 檢查 → 用量限制 → Jev
-  └ 自備 Key 模式 → Jev
+  → 用使用者自己的金鑰直接呼叫 TypeSafe Jev
 → 回傳 choice、confidence、前三名機率 → 只顯示建議
 ```
+
+權限只有 `storage`、`https://chatgpt.com/*`、`https://api.typesafe.ai/*`。錯誤報告送到 router.tekuei.com 是不需要權限的簡單請求（`src/lib/error-log.ts`）。
 
 Jev 從固定選項中選一個：
 
@@ -110,15 +111,15 @@ ChatGPT 新增模型時，必須手動更新 `src/lib/route.ts`，程式不會�
 options.html, popup.html   設定頁和工具列彈出視窗（Vite 入口）
 src/
   App.tsx, main.tsx        設定頁 UI（React + shadcn/ui）
-  background.ts            Service worker：選擇接入方式，處理逾時
+  background.ts            Service worker：呼叫 TypeSafe、安裝時打開設定頁
   content/router.ts        偵測輸入框與模式，排除過期回應，顯示推薦
   lib/route.ts             模型選項、判斷標準、回應驗證（擴充功能與 Worker 共用）
-  lib/config.ts            公開服務網址與 Skool 網址（不含私鑰）
+  lib/settings.ts          金鑰驗證與儲存、引導進度
   lib/i18n.ts              介面文字（en、zh-Hant、zh-Hans、ja、ko）
   components/ui/           shadcn/ui 元件
 public/                    manifest.json、_locales、content.css（原樣複製到 dist/）
-worker/
-  src/skool.ts             目前的部署入口：健康檢查、推薦、管理者會員管理
+worker/                    伺服器（錯誤報告收件匣等）；0.5 起擴充功能不再使用它的推薦與會員路徑
+  src/skool.ts             部署入口
   src/index.ts             共用路由與用量限制（舊 Stripe 程式保留，不對外開放）
   migrations/              D1 資料表變更
 scripts/                   content script 打包、診斷收集器、內部測試工具
@@ -132,7 +133,7 @@ docs/                      部署、隱私、診斷與歷史文件
 提交變更前：
 
 1. 執行 `npm test` 與 `npm run check`，兩者都必須通過。
-2. 改路由規則時，同時更新 `src/lib/route.ts` 和對應測試，並重新部署 Worker。
+2. 改路由規則時，同時更新 `src/lib/route.ts` 和對應測試。
 3. 不要把 Key、token 或 Secret 寫進 Git、文件或擴充功能程式。
 4. UI 或 DOM 相關變更，要在真實 Chrome／Edge 帳號上驗證對話、工作模式、IME 與明暗主題。
 

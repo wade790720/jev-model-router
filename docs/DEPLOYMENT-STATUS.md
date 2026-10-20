@@ -1,5 +1,7 @@
 # Cloudflare deployment status
 
+> Since 0.5 the extension is free with the user's own TypeSafe key: it no longer calls the hosted route, Skool session or membership endpoints below, and has no cookie or router.tekuei.com host permission. Only the error inbox (`/api/errors`) is still used. This page is kept as the server's record.
+
 Updated: 2026-10-06 (Asia/Taipei).
 
 - Worker: `jev-model-router`

@@ -8,13 +8,13 @@ afterEach(() => vi.unstubAllGlobals());
 
 test("uses browser UI language for Traditional and Simplified Chinese", () => {
   as("zh-TW"); expect(locale()).toBe("zh-Hant");
-  as("zh-HK"); expect(t("switched", { model: "Instant" })).toBe("已切換");
+  as("zh-HK"); expect(t("recommendation", { model: "Instant" })).toBe("建議使用 Instant");
   as("zh-CN"); expect(locale()).toBe("zh-Hans");
   expect(t("analyzing")).toBe("分析中…");
 });
 
 test("localizes English, Japanese, Korean and falls back to English", () => {
-  as("en-US"); expect(t("switched", { model: "Instant" })).toBe("Switched");
+  as("en-US"); expect(t("recommendation", { model: "Instant" })).toBe("Suggested: Instant");
   as("ja-JP"); expect(t("recommendation", { model: "High" })).toBe("候補: High");
   as("ko-KR"); expect(t("analyzing")).toBe("분석 중…");
   as("fr-FR"); expect(locale()).toBe("en");
@@ -40,10 +40,13 @@ test("product branding follows the browser language in the popup and manifest", 
     expect(messages.productDescription.message.length).toBeGreaterThan(0);
     expect(messages.productDescription.message.length).toBeLessThanOrEqual(132);
   }
-  expect(json("_locales/zh_TW/messages.json").productDescription.message).toBe("根據輸入內容推薦適合的 ChatGPT 模型，由 TypeSafe AI Jev 提供判斷；僅提供提示，模型由你自行切換，提供給百寶袋俱樂部會員專用。");
-  expect(json("_locales/zh_CN/messages.json").productDescription.message).toBe("根据输入内容推荐适合的 ChatGPT 模型，由 TypeSafe AI Jev 提供判断；仅提供提示，模型由您自行切换，专供百宝袋俱乐部会员使用。");
-  // Exactly 132 characters, the store's limit for the short description.
-  expect(json("_locales/en/messages.json").productDescription.message).toBe("Suggests the best ChatGPT model for your text via TypeSafe AI Jev. Guidance only; you switch models. For Wonder Pocket Club members.");
+  expect(json("_locales/zh_TW/messages.json").productDescription.message).toBe("根據輸入內容推薦適合的 ChatGPT 模型，由 TypeSafe AI Jev 提供判斷；僅提供提示，模型由你自行切換。");
+  expect(json("_locales/zh_CN/messages.json").productDescription.message).toBe("根据输入内容推荐适合的 ChatGPT 模型，由 TypeSafe AI Jev 提供判断；仅提供提示，模型由您自行切换。");
+  expect(json("_locales/en/messages.json").productDescription.message).toBe("Suggests the best ChatGPT model for your text via TypeSafe AI Jev. Guidance only; you switch models.");
+  // Free for everyone now: no store description is limited to club members.
+  for (const folder of ["en", "zh_TW", "zh_CN", "ja", "ko"]) {
+    expect(json(`_locales/${folder}/messages.json`).productDescription.message).not.toMatch(/會員|会员|members|会員|회원/);
+  }
 });
 
 test("an orphaned content script without chrome.* still gets text", () => {
