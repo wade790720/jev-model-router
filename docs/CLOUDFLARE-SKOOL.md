@@ -1,86 +1,55 @@
-# Cloudflare + Skool：部署準備與發布閘門
+# Cloudflare Worker：錯誤收件箱
 
-> 0.5 起擴充功能免費、使用者自備 TypeSafe 金鑰：不再使用本文件的託管推薦、Skool 會員與 session 路徑，也沒有 cookie 權限。本文件只保留作伺服器（`worker/`）的紀錄；伺服器另行處理。
+擴充功能 0.5 起免費、使用者自備 TypeSafe 金鑰，沒有託管服務。Worker（`worker/`，網域 router.tekuei.com）現在只負責一件事：接收三個擴充功能（ig-sorter、brand-digest、jev-model-router）送來的錯誤報告，讓每天的 AI 例行工作讀取。
 
-目前是可在本機驗證的後端基礎，不是已部署或完整會員登入。
+舊的託管推薦、Skool 會員登入、session、用量上限都已從程式移除。0.4.0 審核通過但沒有公開，沒有任何使用者受影響。
 
-## 還需要的營運設定
+## 路由
 
-- 網域與實際子網域，例如 router.your-domain（請提供真實名稱，程式不猜）。
-- Skool 社群網址與方案。官方 Zapier 文件只列付費會員姓名/email 觸發，未在該頁保證取消/到期事件；請確認後台可取得的欄位及持續有效會員狀態。
-- email 所有權驗證的寄信服務、寄件網域與 Secrets；不能只輸入 email 就核發 session。
-- 最終額度、成本上限與同步間隔。現有 request/day 與 token/day 是測試保護，不等於保證無限用量；token 使用量是上游完成後記帳，並發時可能超越門檻，公開發布前需預留額度與全域請求限制。
+| 路由 | 用途 | 驗證 |
+| --- | --- | --- |
+| `GET /api/health` | 回傳 `{ ok, service: "error-inbox", intakeReady, adminReady }`。`intakeReady` 表示 D1 已綁定；`adminReady` 另外要求 `ERRORS_ADMIN_SECRET` 至少 32 字元。 | 不需要 |
+| `POST /api/errors` | 收錯誤報告（text/plain 簡單請求，擴充功能不需要 host permission）。只收三個工具，有大小與每日新種類上限。 | 不需要 |
+| `GET /api/admin/errors?status=new\|seen` | 列出錯誤。 | Bearer `ERRORS_ADMIN_SECRET` |
+| `POST /api/admin/errors/ack` | 把錯誤標成已處理。 | Bearer `ERRORS_ADMIN_SECRET` |
 
-參考：[Skool 官方整合](https://help.skool.com/article/56-zapier-integration)（目前只在 Pro 方案提供）。
+其他路徑一律 404，包括舊的 `/api/route`、`/api/session`、`/api/admin/members`。
 
-## 部署步驟（尚未代執行）
+排程（`wrangler.jsonc` 的 cron `0 3 * * *`，每天一次）只刪除 90 天沒再出現的錯誤種類。
 
-PowerShell 進入專案的 worker 資料夾；Wrangler 是部署工具，初次 npx 需要下載。
+程式：`worker/src/skool.ts`（入口）、`worker/src/errors.ts`（收件箱）、`worker/src/errors.test.ts`。
+
+## Secrets
+
+**保留**
+
+- `ERRORS_ADMIN_SECRET`：每天的 AI 例行工作用它讀取與確認錯誤。
+
+**可以刪除**（程式已不再讀取。只列出來，沒有代刪；確認不再需要回到舊版後再刪）
+
+- `TYPESAFE_API_KEY`：舊託管推薦用來呼叫 TypeSafe。
+- `MEMBER_HASH_SECRET`：舊 Skool 會員識別的 HMAC 金鑰。
+- `ADMIN_SYNC_SECRET`：舊 `/api/admin/members` 的管理者金鑰。
+- 如果還留著 0.2 時期的 `STRIPE_SECRET_KEY`、`STRIPE_WEBHOOK_SECRET`，也可以刪除。
+
+刪除指令（在 `worker/` 資料夾）：
+
+```powershell
+npx wrangler@latest secret list
+npx wrangler@latest secret delete TYPESAFE_API_KEY
+npx wrangler@latest secret delete MEMBER_HASH_SECRET
+npx wrangler@latest secret delete ADMIN_SYNC_SECRET
+```
+
+## 資料庫
+
+D1 `jev-model-router` 的資料表都沒有動。收件箱只用 `error_reports`（`migrations/0002_errors.sql`）。舊的 `members`、`member_sessions`、`usage_windows`、`licenses` 還留在資料庫裡，程式已不再讀寫，之後再決定要不要刪。
+
+## 部署
 
 ```powershell
 Set-Location C:\Users\Wade_TPE\Documents\jev-model-router\worker
-npx wrangler@latest login
-npx wrangler@latest d1 create jev-model-router
-```
-
-將建立出的 database_id 填入 wrangler.jsonc 的 DB 綁定；不要另建同名重複綁定。
-
-先本機驗證表結構：
-
-```powershell
-npx wrangler@latest d1 execute DB --local --file=schema.sql
-npx wrangler@latest d1 migrations apply DB --local
-npx wrangler@latest dev
-```
-
-本機 Secrets 放 .dev.vars（已忽略）；參照 .dev.vars.example。不要把 Key 貼進聊天、指令參數、Git 或擴充功能。
-
-確認目標帳號/資料庫後才初始化遠端：
-
-```powershell
-npx wrangler@latest d1 execute DB --remote --file=schema.sql
-npx wrangler@latest d1 migrations apply DB --remote
-npx wrangler@latest secret put TYPESAFE_API_KEY
-npx wrangler@latest secret put ADMIN_SYNC_SECRET
-npx wrangler@latest secret put MEMBER_HASH_SECRET
 npx wrangler@latest deploy
 ```
 
-兩個管理/HMAC Secret 必須不同、隨機且至少32字元。HMAC Secret 不能隨意旋轉，否則既有會員識別無法對上。Secrets 透過互動輸入，不留 shell history。
-
-設定自訂網域：Cloudflare Workers & Pages → 該 Worker → Settings → Domains & Routes → Custom Domain。或在 wrangler.jsonc 加 routes 的 custom_domain=true（僅填已確認網域，不覆蓋既有用途）。
-
-確認 /api/health，再將 https 服務根網址及 Skool 網址填進 src/lib/config.ts，再執行 npm run build；不含 Key。一般使用者不需自行填服務網址。
-
-官方：[D1 建立與綁定](https://developers.cloudflare.com/d1/get-started/)、[Secrets](https://developers.cloudflare.com/workers/configuration/secrets/)、[自訂網域](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/)。
-
-## 目前 API 與內部測試
-
-- GET /api/health：回傳 signInReady=false，不代表所有上游與 Secrets 正常。
-- POST /api/route：Bearer session，資格有效且有餘額才呼叫 TypeSafe。
-- POST /api/admin/members：只給管理者，Bearer ADMIN_SYNC_SECRET。JSON 欄位 email、status（active/inactive）、validUntil（Unix秒）及可選 issueToken（預設false）。
-- 管理者核對付費狀態後，issueToken=true 才核發內部測試 token；不自動寄送、不將 Secret 下放套件。回傳明文 token 只此一次，由管理者安全交付自己測試。
-- validUntil 最多35天，必須持續更新；不代表續訂推定。inactive 即時阻止所有該會員 session。session 到期需重新核發，延長會員資格不延長舊 session。
-- Stripe checkout/portal/webhook 和 public login 均不提供，預設404。錯誤不記錄請求body或私鑰。
-
-## 正式發布前必須通過
-
-1. 驗證碼：email所有權、一次性、期限、錯誤次數、寄送/IP/全域頻率限制、無會員枚舉、email變更/登出/session撤銷。
-2. Skool 同步：核對誰是有效付費會員；免費加入不能授權。驗證取消、付款失敗、到期、重複與乱序事件、既有會員匯入及同步中斷的 fail-closed 規則。
-3. 公開使用者介面改為正式登入，移除內部測試入口；目前按登入會誠實提示尚未準備好。
-4. 用量與成本並發壓測、Cloudflare/TypeSafe 真實服務端到端測試、正式隱私政策與客服。
-5. 在 Chrome/Edge 真實帳號驗證文字輸入、IME、主題、對話/工作模式與正常送出。測試不會重整使用中的分頁。
-
-以上缺件確認前，僅內部測試，不宣稱 Skool 自動會員登入已完成。
-
-## 託管服務的會員驗證（2026-10-12）
-
-託管服務是預設；進階設定填了自己的 TypeSafe API key 時改為直連 TypeSafe。
-
-1. 擴充功能（背景程式）沒有有效憑證時，用 `chrome.cookies` 讀取這個瀏覽器的 skool.com cookie，POST 到 `/api/session`。
-2. Worker（`worker/src/session.ts`）帶著這些 cookie 讀取 `https://www.skool.com/wonderpocket/about`（舊網址 `/forge-1085/about` 當備援），從 `__NEXT_DATA__` 確認 `self.member.groupId` 與角色（member、group-admin）。
-3. 是會員：以 Skool 使用者 ID 的 HMAC 為 `member_hash`，發 24 小時的 session token；不是會員回 403。
-4. cookie 只用於這一次請求，不儲存、不記錄。每個 IP 每分鐘最多 10 次。
-5. 託管服務回 401/403 時，擴充功能重新驗證一次。會員退出社群後，最晚 24 小時內失效。
-
-已知風險：Skool 若封鎖來自 Cloudflare 的請求或改版，驗證會回 502，會員可改用自己的 API key。
+部署後確認 `https://router.tekuei.com/api/health` 回傳 `"service": "error-inbox"`，且 `intakeReady`、`adminReady` 都是 `true`。

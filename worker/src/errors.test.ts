@@ -1,8 +1,7 @@
 import { readFileSync } from "node:fs";
 import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import { expect, test } from "vitest";
-import worker from "./skool";
-import type { Env } from "./index";
+import worker, { type Env } from "./skool";
 
 // Real SQLite running the shipped migration, behind D1's prepare/bind/first/all/run/batch shape.
 function database() {
@@ -19,7 +18,7 @@ function database() {
   return { sql, prepare, batch: async (statements: { run(): Promise<unknown> }[]) => { for (const s of statements) await s.run(); } };
 }
 const secret = "test-admin-secret-" + "a".repeat(32);
-const setup = () => { const db = database(); return { db, env: { DB: db as unknown as D1Database, ERRORS_ADMIN_SECRET: secret, ADMIN_SYNC_SECRET: "member-admin-" + "d".repeat(32) } as Env }; };
+const setup = () => { const db = database(); return { db, env: { DB: db as unknown as D1Database, ERRORS_ADMIN_SECRET: secret } as Env }; };
 const report = (env: Env, body: unknown) => worker.fetch(new Request("https://router.example/api/errors", {
   method: "POST", headers: { "content-type": "text/plain" }, body: typeof body === "string" ? body : JSON.stringify(body)
 }), env);
@@ -65,6 +64,27 @@ test("a handled error comes back as new only when it reappears in another versio
   expect(await rows(env)).toEqual([]);
   await report(env, error("TypeError: boom", "0.2.1"));
   expect((await rows(env))[0].status).toBe("new");
+});
+
+test("the Worker is only the error inbox: health reports its setup, the hosted routes are gone", async () => {
+  const { env } = setup();
+  const health = await (await worker.fetch(new Request("https://router.example/api/health"), env)).json();
+  expect(health).toEqual({ ok: true, service: "error-inbox", intakeReady: true, adminReady: true });
+  expect(await (await worker.fetch(new Request("https://router.example/api/health"), {} as Env)).json())
+    .toMatchObject({ intakeReady: false, adminReady: false });
+  for (const path of ["/api/route", "/api/session", "/api/admin/members", "/api/checkout"]) {
+    expect((await worker.fetch(new Request("https://router.example" + path, { method: "POST" }), env)).status, path).toBe(404);
+  }
+});
+
+test("the daily cron drops error kinds not seen for 90 days and keeps the rest", async () => {
+  const { db, env } = setup();
+  const insert = db.sql.prepare("INSERT INTO error_reports (signature, tool, version, location, message, browser, first_seen, last_seen) VALUES (?, 'ig-sorter', '0', 'page', ?, 'x', ?, ?)");
+  const now = Math.floor(Date.now() / 1000);
+  insert.run("old", "old", now - 91 * 86400, now - 91 * 86400);
+  insert.run("recent", "recent", now - 86400, now - 86400);
+  await worker.scheduled({} as ScheduledController, env);
+  expect(db.sql.prepare("SELECT message FROM error_reports").all()).toEqual([{ message: "recent" }]);
 });
 
 test("a flood of new kinds stops at the daily cap but known errors still count", async () => {

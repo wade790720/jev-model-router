@@ -1,4 +1,4 @@
-import type { Env } from "./index";
+import type { Env } from "./skool";
 
 // Error inbox: the three extensions send errors here once the member agrees (error-log.ts),
 // and a daily AI routine reads the new ones through the admin routes in skool.ts.

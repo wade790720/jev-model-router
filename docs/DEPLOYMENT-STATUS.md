@@ -1,24 +1,25 @@
 # Cloudflare deployment status
 
-> Since 0.5 the extension is free with the user's own TypeSafe key: it no longer calls the hosted route, Skool session or membership endpoints below, and has no cookie or router.tekuei.com host permission. Only the error inbox (`/api/errors`) is still used. This page is kept as the server's record.
+Updated: 2026-10-21 (Asia/Taipei).
 
-Updated: 2026-10-06 (Asia/Taipei).
+- Worker: `jev-model-router`, custom domain https://router.tekuei.com (`workers.dev` and preview URLs disabled).
+- D1: `jev-model-router`, ID `51df88f5-5ee6-4ad3-a475-0ff56d44114d`.
+- Role: **error inbox only.** Since extension 0.5 there is no hosted service. The code for the hosted route, Skool sign-in, member provisioning and usage limits was removed from `worker/`; see [CLOUDFLARE-SKOOL.md](CLOUDFLARE-SKOOL.md) for the remaining routes.
+- Not yet deployed: the deployed Worker still runs the previous code until the next `npx wrangler@latest deploy` in `worker/`. After deploying, `/api/health` should return `"service": "error-inbox"`.
 
-- Worker: `jev-model-router`
-- Internal-test endpoint: https://router.tekuei.com
-- Custom domain deployed and HTTPS `/api/health` verified with HTTP 200.
-- `workers.dev` and preview URLs are disabled after custom-domain deployment. Attempt to preserve those additional public endpoints was blocked by the permission reviewer; no such re-enablement was executed.
-- D1: `jev-model-router`, ID `51df88f5-5ee6-4ad3-a475-0ff56d44114d`
-- Local and remote base schema plus `0001_skool.sql` applied successfully.
-- Wrangler dry-run and initial deployment succeeded.
-- Existing `tekuei-db` and website/domain routing were not modified.
+## Secrets
 
-`TYPESAFE_API_KEY`, `ADMIN_SYNC_SECRET`, and persistent `MEMBER_HASH_SECRET` are provisioned. Two synthetic live requests through the custom domain, authenticated membership session, D1 and TypeSafe returned HTTP 200: Chat `instant`, Work `luna`, each with top-three probabilities. Initial provisioning returned transient 503/401 during secret changes; a later retry with the same persisted administrator credential succeeded. The exact transient cause was not established. Do not rotate HMAC secrets on retries.
+Keep `ERRORS_ADMIN_SECRET` (the daily AI routine reads the inbox with it).
 
-The extension now defaults to `https://router.tekuei.com`, with the confirmed Skool community link. Tests: 61 passed; `npm run check` passed. Real Chrome hosted-input flow still requires the operator test below. This is internal testing, not production-ready public login or automatic Skool subscription verification.
+The code no longer reads these, so they can be deleted (listed only; nothing was deleted):
 
-An operator-only test membership/session expires at **2026-10-07 01:47:20 Asia/Taipei** (2026-10-06T17:47:20Z). It is explicitly an internal entitlement, not verified Skool payment. Token and administrator credential are Windows-user-bound DPAPI ciphertext in ignored `.local/hosted-test-token.dpapi` and `.local/hosted-admin.dpapi`; no plaintext credentials were logged or committed. Keep the encrypted administrator credential for future authorized administration. The persistent HMAC secret lives in Cloudflare.
+- `TYPESAFE_API_KEY`
+- `MEMBER_HASH_SECRET`
+- `ADMIN_SYNC_SECRET`
+- `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, if still present from 0.2
 
-To test locally: reload the extension and refresh your ChatGPT tab manually. Run `scripts/copy-internal-test-token.ps1` in PowerShell 7 on this Windows account; paste the copied token into settings **Internal testing access**, turn off the personal-key option, save, and approve the domain permission. Clear the clipboard with the same script's `-Clear` switch. Type a short draft in Chat and Work and verify recommendation-only UI. Do not share the token or treat it as public login. Expired tokens need fresh authorized provisioning, not removal of expiry checks.
+## Database
 
-Next: finish public email ownership verification, Skool paid-status lifecycle synchronization and release safety checks. Never put plaintext secrets in this document, Git, chat, or extension source.
+No tables were changed and no migration was added. The inbox uses `error_reports`. The old `members`, `member_sessions`, `usage_windows` and `licenses` tables remain untouched for a later decision.
+
+Never put plaintext secrets in this document, Git, chat, or extension source.

@@ -113,15 +113,15 @@ src/
   App.tsx, main.tsx        設定頁 UI（React + shadcn/ui）
   background.ts            Service worker：呼叫 TypeSafe、安裝時打開設定頁
   content/router.ts        偵測輸入框與模式，排除過期回應，顯示推薦
-  lib/route.ts             模型選項、判斷標準、回應驗證（擴充功能與 Worker 共用）
+  lib/route.ts             模型選項、判斷標準、回應驗證
   lib/settings.ts          金鑰驗證與儲存、引導進度
   lib/i18n.ts              介面文字（en、zh-Hant、zh-Hans、ja、ko）
   components/ui/           shadcn/ui 元件
 public/                    manifest.json、_locales、content.css（原樣複製到 dist/）
-worker/                    伺服器（錯誤報告收件匣等）；0.5 起擴充功能不再使用它的推薦與會員路徑
-  src/skool.ts             部署入口
-  src/index.ts             共用路由與用量限制（舊 Stripe 程式保留，不對外開放）
-  migrations/              D1 資料表變更
+worker/                    伺服器：只負責錯誤收件箱（router.tekuei.com）
+  src/skool.ts             入口：health、錯誤收件、管理者讀取與確認
+  src/errors.ts            錯誤收件箱
+  migrations/              D1 資料表（舊會員表保留未動）
 scripts/                   content script 打包、診斷收集器、內部測試工具
 docs/                      部署、隱私、診斷與歷史文件
 ```

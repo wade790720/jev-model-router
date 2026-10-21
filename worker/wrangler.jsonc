@@ -8,13 +8,6 @@
   "routes": [
     { "pattern": "router.tekuei.com", "custom_domain": true }
   ],
-  "vars": {
-    "MAX_PROMPT_CHARS": "20000",
-    "MAX_REQUESTS_PER_MINUTE": "20",
-    "MAX_REQUESTS_PER_DAY": "3000",
-    "MAX_INPUT_TOKENS_PER_DAY": "2000000",
-    "GLOBAL_INPUT_TOKENS_PER_DAY": "100000000"
-  },
   "d1_databases": [
     {
       "binding": "DB",

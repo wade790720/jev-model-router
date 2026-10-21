@@ -1,4 +1,4 @@
-// Shared by the extension (personal-key mode) and the Worker (hosted mode).
+// Model choices and the Jev request/response format. Used by the extension's service worker only.
 export const MODES = Object.freeze(["instant", "medium", "high", "pro"] as const);
 export const WORK_MODES = Object.freeze(["luna", "sol_low", "sol_medium", "astra_low", "astra_medium", "astra_xhigh"] as const);
 
