@@ -10,7 +10,7 @@
 
 這是一個 Chrome/Edge 擴充功能，它讀取 ChatGPT 輸入框的草稿。
 由 TypeSafe AI Jev 推薦模型與推理強度，只顯示建議，模型由使用者自己切換。
-免費使用，用你自己的 TypeSafe API 金鑰；沒有託管服務，不需要登入或會員。
+工具免費，用你自己的 TypeSafe API 金鑰。TypeSafe 每月提供 5 美元免費額度，超過才需要付費給 TypeSafe（價格表在 [typesafe.ai](https://typesafe.ai/)）。沒有託管服務，不需要登入或會員。
 
 ## 目錄
 

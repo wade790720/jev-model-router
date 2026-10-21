@@ -39,7 +39,7 @@ test("setup failures name the recovery rather than pretending the API failed", (
   const { routingFailure } = setup();
   const missing = routingFailure("routing_key_missing");
   expect(missing.kind).toBe("warning");
-  expect(missing.message).toBe("先設定 TypeSafe API key：點工具列的圖示");
+  expect(missing.message).toBe("先設定 TypeSafe API 金鑰：點工具列的圖示");
   expect(routingFailure("routing_auth").message).toMatch(/不接受這把金鑰/);
   expect(routingFailure("routing_network").message).toMatch(/連不上 TypeSafe/);
   expect(routingFailure("routing_timeout").kind).toBe("error");

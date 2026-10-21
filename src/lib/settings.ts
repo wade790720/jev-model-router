@@ -7,6 +7,10 @@ export const KEYS_URL = "https://console.typesafe.ai/keys";
 // GET /v1/models lists the models the key may use: it proves the key works without running a model.
 export const MODELS_URL = "https://api.typesafe.ai/v1/models";
 export const CLUB_URL = "https://www.skool.com/wonderpocket/about";
+// TypeSafe has no pricing page (typesafe.ai/pricing is a 404); its price table ("Jev.Cost": input per
+// million tokens, output free) is on the home page. Each account gets US$5 of free usage a month
+// (confirmed by the maintainer; the public site does not state it).
+export const PRICING_URL = "https://typesafe.ai/";
 
 export interface Settings { typeSafeKey: string; tried: boolean }
 export type Status = { message: string; kind: "success" | "error" } | null;

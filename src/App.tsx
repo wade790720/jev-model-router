@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { t } from "@/lib/i18n";
 import {
-  CLUB_URL, createActionRunner, KEYS_URL, loadSettings, onSettingsChange, verifyAndSaveKey, type Settings, type Status
+  CLUB_URL, createActionRunner, KEYS_URL, loadSettings, onSettingsChange, PRICING_URL, verifyAndSaveKey, type Settings, type Status
 } from "@/lib/settings";
 
 // Settings page and toolbar popup (same UI; popup.html only fixes the width). See DESIGN.md.
@@ -105,6 +105,12 @@ export function App({ initial }: { initial?: Settings }) {
                 </a>
               </p>
               <p className="text-xs text-muted-foreground">{t("s1Create")}</p>
+              <p className="text-xs text-muted-foreground" id="pricing">
+                {t("s1Pricing")}{" "}
+                <a className="inline-flex items-center gap-1 text-primary-text underline underline-offset-4" href={PRICING_URL} target="_blank" rel="noreferrer">
+                  typesafe.ai <ExternalLink className="size-3" aria-hidden="true" />
+                </a>
+              </p>
             </Step>
             <Step n={2} title={t("s2Title")} state={stepState(hasKey, true)}>
               <KeyForm initial="" />

@@ -14,6 +14,10 @@ test("first visit: step 1 links to the TypeSafe key page, step 2 takes the key, 
   const html = render("", false);
   expect(html).toMatch(/id="onboarding"/);
   expect(html).toContain('href="https://console.typesafe.ai/keys"');
+  // Honest about cost: the tool is free; TypeSafe gives US$5 a month, then bills the user.
+  expect(html).toContain("工具免費。TypeSafe 每月提供 5 美元免費額度，超過才需要付費給 TypeSafe。");
+  expect(html).toMatch(/id="pricing"[^>]*>TypeSafe 的價格列在官網：(?:(?!<\/p>).)*href="https:\/\/typesafe\.ai\/"/s);
+  expect(html).not.toContain("免費使用");
   expect(html).toMatch(/id="typeSafeKey"[^>]*aria-describedby="keyNote consentNote"/);
   expect(html).toContain("驗證並儲存");
   expect(html).toMatch(/<li class="flex gap-3 opacity-50"[^>]*>/); // step 3 is faded
