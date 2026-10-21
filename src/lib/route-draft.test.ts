@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from "vitest";
-import { routeDraft, TYPE_SAFE_URL, type CodedError } from "./route-draft";
+import { isNoCredit, routeDraft, TYPE_SAFE_URL, type CodedError } from "./route-draft";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -24,6 +24,13 @@ test("without a key nothing is sent and the badge asks for one", async () => {
   const api = background({});
   await expect(api.route("Synthetic task")).rejects.toSatisfy((e: CodedError) => e.code === "routing_key_missing");
   expect(api.requests).toHaveLength(0);
+});
+
+test("an account without credit gets its own code, not an auth failure", async () => {
+  const api = background({ typeSafeKey: "synthetic-key" }, 402);
+  await expect(api.route("Synthetic task")).rejects.toSatisfy((e: CodedError) => e.code === "routing_no_credit");
+  expect(isNoCredit(403, "Insufficient balance: add a payment method")).toBe(true);
+  expect(isNoCredit(401, "Invalid API key")).toBe(false);
 });
 
 test("a rejected key is an auth failure", async () => {

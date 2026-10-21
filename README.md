@@ -10,7 +10,7 @@
 
 這是一個 Chrome/Edge 擴充功能，它讀取 ChatGPT 輸入框的草稿。
 由 TypeSafe AI Jev 推薦模型與推理強度，只顯示建議，模型由使用者自己切換。
-工具免費，用你自己的 TypeSafe API 金鑰。TypeSafe 新帳號有免費試用額度，用完後依用量付費給 TypeSafe（價格表在 [typesafe.ai](https://typesafe.ai/)）。沒有託管服務，不需要登入或會員。
+工具免費，用你自己的 TypeSafe API 金鑰。TypeSafe 依用量計費，要先在 TypeSafe 綁定付款方式（價格表在 [typesafe.ai](https://typesafe.ai/)）。沒有託管服務，不需要登入或會員。
 
 ## 目錄
 
@@ -56,7 +56,7 @@ npm run dev   # 用假資料開啟 http://localhost:5173/options.html，不需�
 ## 使用方式
 安裝後會自動打開設定頁，照三個步驟做：
 
-1. 到 [TypeSafe 主控台的金鑰頁面](https://console.typesafe.ai/keys) 申請 API 金鑰。
+1. 先在 TypeSafe 主控台綁定付款方式，再到 [TypeSafe 主控台的金鑰頁面](https://console.typesafe.ai/keys) 申請 API 金鑰。沒有可用額度時，金鑰不能用。
 2. 把金鑰貼到設定頁，按「驗證並儲存」。擴充功能會先向 TypeSafe 確認金鑰可用（列出可用模型，不花額度），才會儲存。
 3. 到 ChatGPT 試一次。第一次出現建議後，引導完成，設定頁只剩一般設定。
 

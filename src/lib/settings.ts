@@ -1,6 +1,6 @@
 // Settings page actions. Kept out of React so they can be tested without a DOM.
 import { t } from "./i18n";
-import { FIRST_SUGGESTION_KEY } from "./route-draft";
+import { FIRST_SUGGESTION_KEY, isNoCredit } from "./route-draft";
 
 // TypeSafe docs, Quick start: "Get an API key from the TypeSafe console" links to this page.
 export const KEYS_URL = "https://console.typesafe.ai/keys";
@@ -8,8 +8,8 @@ export const KEYS_URL = "https://console.typesafe.ai/keys";
 export const MODELS_URL = "https://api.typesafe.ai/v1/models";
 export const CLUB_URL = "https://www.skool.com/wonderpocket/about";
 // TypeSafe has no pricing page (typesafe.ai/pricing is a 404); its price table ("Jev.Cost": input per
-// million tokens, output free) is on the home page. Free trial credit: external reports say new
-// accounts get it once at sign-up; the official site does not state it. Maintainers: check the console.
+// million tokens, output free) is on the home page. New accounts get no free credit (tested by the
+// maintainer, 2026-10); TypeSafe charges by usage.
 export const PRICING_URL = "https://typesafe.ai/";
 
 export interface Settings { typeSafeKey: string; tried: boolean }
@@ -36,6 +36,7 @@ export async function checkKey(key: string): Promise<string | null> {
     return t("keyNetwork");
   }
   if (response.ok) return null;
+  if (isNoCredit(response.status, await response.text().catch(() => ""))) return t("keyNoCredit");
   if (response.status === 401 || response.status === 403) return t("keyInvalid");
   if (response.status === 429) return t("keyRateLimit");
   if (response.status >= 500) return t("keyBusy");

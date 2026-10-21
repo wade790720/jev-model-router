@@ -241,6 +241,7 @@ export function createRouter() {
       routing_key_missing: "routeKeyMissing",
       routing_auth: "routeAuth",
       routing_rate_limit: "routeRateLimit",
+      routing_no_credit: "routeNoCredit",
       routing_timeout: "routeTimeout",
       routing_network: "routeNetwork",
       routing_invalid: "routeInvalid"

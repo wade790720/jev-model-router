@@ -8,12 +8,19 @@ export const FIRST_SUGGESTION_KEY = "firstSuggestionAt";
 export type CodedError = Error & { code?: string };
 const coded = (message: string, code: string): CodedError => Object.assign(new Error(message), { code });
 
+// TypeSafe's error docs list no billing status, and new accounts have no free credit.
+// ponytail: guessed signal (402 or a billing-like message); swap in the real status/body once seen.
+export const isNoCredit = (status: number, message: string) =>
+  status === 402 || /billing|payment|credit|balance|insufficient funds/i.test(message);
+
 async function jsonResponse(response: Response) {
   const body = await response.json().catch(() => null);
   if (!response.ok) {
-    const message = body?.error ?? body?.detail ?? `HTTP ${response.status}`;
-    const code = [401, 403].includes(response.status) ? "routing_auth" : response.status === 429 ? "routing_rate_limit" : "routing_error";
-    throw coded(typeof message === "string" ? message : JSON.stringify(message), code);
+    const raw = body?.error ?? body?.detail ?? `HTTP ${response.status}`;
+    const message = typeof raw === "string" ? raw : JSON.stringify(raw);
+    const code = isNoCredit(response.status, message) ? "routing_no_credit"
+      : [401, 403].includes(response.status) ? "routing_auth" : response.status === 429 ? "routing_rate_limit" : "routing_error";
+    throw coded(message, code);
   }
   return body;
 }

@@ -41,6 +41,7 @@ test("setup failures name the recovery rather than pretending the API failed", (
   expect(missing.kind).toBe("warning");
   expect(missing.message).toBe("先設定 TypeSafe API 金鑰：點工具列的圖示");
   expect(routingFailure("routing_auth").message).toMatch(/不接受這把金鑰/);
+  expect(routingFailure("routing_no_credit").message).toBe("TypeSafe 帳號還沒有可用額度，請先綁定付款方式");
   expect(routingFailure("routing_network").message).toMatch(/連不上 TypeSafe/);
   expect(routingFailure("routing_timeout").kind).toBe("error");
 });

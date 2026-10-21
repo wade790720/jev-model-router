@@ -61,7 +61,7 @@ test("the key check lists models: free, and proves TypeSafe accepts the key", as
 
 test("key problems are explained in plain language", async () => {
   for (const [reply, text] of [
-    [401, /不接受這把金鑰/], [403, /不接受這把金鑰/], [429, /太頻繁/], [529, /太忙/], ["offline", /連不上/], [418, /錯誤代碼 418/]
+    [401, /不接受這把金鑰/], [403, /不接受這把金鑰/], [429, /太頻繁/], [529, /太忙/], ["offline", /連不上/], [418, /錯誤代碼 418/], [402, /還沒有可用額度/]
   ] as const) {
     setup({}, reply);
     expect(await checkKey("synthetic-key")).toMatch(text);
